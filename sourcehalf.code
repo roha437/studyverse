@@ -1,0 +1,2578 @@
+FILE: .gitignore
+================================================================================
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.design-cache/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Common ignores
+node_modules
+.next/
+.DS_Store
+
+================================================================================
+FILE: app/globals.css
+================================================================================
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --background: #f6f9fc;
+  --foreground: #24354a;
+  --card: #ffffff;
+  --card-foreground: #24354a;
+  --popover: #ffffff;
+  --popover-foreground: #24354a;
+  --primary: #174a7e;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf5fb;
+  --secondary-foreground: #174a7e;
+  --muted: #f1f5f9;
+  --muted-foreground: #718096;
+  --accent: #edf0fb;
+  --accent-foreground: #574b9a;
+  --border: #e2eaf2;
+  --input: #e2eaf2;
+  --ring: #55a9d4;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { font-family: Arial, Helvetica, sans-serif; }
+  body { @apply bg-background text-foreground; }
+  button { cursor: pointer; }
+}
+
+.font-serif { font-family: Georgia, 'Times New Roman', serif; }
+@media (max-width: 640px) { .font-serif { letter-spacing: -0.02em; } }
+::selection { background: #ccebd8; color: #245e45; }
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-thumb { background: #d5e0d7; border-radius: 999px; }
+::-webkit-scrollbar-track { background: #f7f8f6; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button, article { transition-duration: 180ms; }
+}
+
+.sv-confetti {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: sv-confetti-fall linear forwards;
+}
+@keyframes sv-confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(540deg); opacity: 0.2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv-confetti { display: none; }
+}
+
+
+================================================================================
+FILE: app/layout.tsx
+================================================================================
+import { Analytics } from '@vercel/analytics/next'
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'StudyVerse — Learn Smarter. Improve Faster.',
+  description: 'A personalized CBSE learning companion for Class 8 students.',
+  generator: 'v0.app',
+  icons: {
+    icon: [
+      {
+        url: '/icon-light-32x32.png',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/icon-dark-32x32.png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+    apple: '/apple-icon.png',
+  },
+}
+
+export const viewport: Viewport = {
+  colorScheme: 'light dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+  ],
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <html lang="en">
+      <body className="antialiased">
+        {children}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
+      </body>
+    </html>
+  )
+}
+
+================================================================================
+FILE: app/page.tsx
+================================================================================
+'use client'
+
+import { useState } from 'react'
+import {
+  ArrowRight,
+  Bell,
+  BookOpen,
+  BrainCircuit,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  Clock3,
+  Flame,
+  Home,
+  Lightbulb,
+  Menu,
+  MessageCircleQuestion,
+  Play,
+  Plus,
+  Search,
+  Sparkles,
+  Target,
+  Trophy,
+  X,
+  ScanSearch,
+  CalendarDays,
+  Upload,
+} from 'lucide-react'
+import { StudyVerseProvider, useStudyVerse } from '@/components/studyverse/store'
+import { Overview } from '@/components/studyverse/overview'
+import { LearningGaps } from '@/components/studyverse/learning-gaps'
+import { StudyPlanner } from '@/components/studyverse/study-planner'
+import { PracticeQuiz } from '@/components/studyverse/practice-quiz'
+import { Achievements, Celebration } from '@/components/studyverse/achievements'
+import { UploadResources } from '@/components/studyverse/upload-resources'
+import { HeaderDate, SidebarStreak } from '@/components/studyverse/shell-widgets'
+import type { NavLabel } from '@/components/studyverse/ui'
+
+type NavItem = { label: string; icon: typeof Home }
+
+const navItems: NavItem[] = [
+  { label: 'Overview', icon: Home },
+  { label: 'My Learning', icon: BookOpen },
+  { label: 'Learning Gaps', icon: ScanSearch },
+  { label: 'Study Planner', icon: CalendarDays },
+  { label: 'Practice', icon: BrainCircuit },
+  { label: 'Ask a Doubt', icon: MessageCircleQuestion },
+  { label: 'Upload Resources', icon: Upload },
+]
+
+const chapters = [
+  { name: 'Crop Production and Management', subject: 'Science', progress: 82, color: 'bg-[#e7f1ec]', accent: 'text-[#377b60]', status: 'In progress' },
+  { name: 'Microorganisms: Friend and Foe', subject: 'Science', progress: 38, color: 'bg-[#eee9f9]', accent: 'text-[#7460a9]', status: 'Next up' },
+  { name: 'Comparing Quantities', subject: 'Mathematics', progress: 14, color: 'bg-[#fff0e3]', accent: 'text-[#bd7640]', status: 'Needs attention' },
+]
+
+function Landing({ onStart }: { onStart: () => void }) {
+  return <div className="min-h-screen bg-[#f6f9fc] text-[#26312d]"><header className="flex items-center justify-between px-6 py-5 md:px-14"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#dff2e9] text-[#2e8a64]"><Sparkles size={20} /></span><span className="font-serif text-2xl font-semibold">Study<span className="text-[#247eb7]">Verse</span></span></div><button onClick={onStart} className="rounded-xl bg-[#174a7e] px-4 py-2.5 text-sm font-semibold text-white">Start learning</button></header><main><section className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-16 md:grid-cols-2 md:px-14 md:pt-24"><div><p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#4e9a72]">Learn smarter. Improve faster.</p><h1 className="font-serif text-5xl font-semibold leading-[1.05] tracking-tight text-[#243b52] md:text-7xl">Know what to study <span className="text-[#247eb7]">next.</span></h1><p className="mt-6 max-w-lg text-base leading-8 text-[#718096]">StudyVerse turns your textbook, practice, and quiz patterns into a clear learning path — so every study session has a purpose.</p><div className="mt-8 flex flex-wrap gap-3"><button onClick={onStart} className="flex items-center gap-2 rounded-xl bg-[#174a7e] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#174a7e]/15">Start learning <ArrowRight size={16} /></button><button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="rounded-xl border border-[#dce7ef] bg-white px-5 py-3.5 text-sm font-semibold text-[#557086]">Explore features</button></div></div><div className="rounded-[2rem] border border-[#dbe8e5] bg-white p-5 shadow-2xl shadow-[#174a7e]/10"><div className="rounded-2xl bg-[#f1f8f4] p-5"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#4e9a72]">Your next best step</span><Sparkles size={16} className="text-[#63ad86]" /></div><h3 className="mt-5 font-serif text-2xl font-semibold text-[#304039]">Microorganisms: Friend and Foe</h3><p className="mt-2 text-xs leading-5 text-[#829087]">Builds on your recent work with crop production.</p><div className="mt-5 h-2 rounded-full bg-[#d7e9dc]"><div className="h-full w-[38%] rounded-full bg-[#61ae83]" /></div><button onClick={onStart} className="mt-5 flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-xs font-semibold text-[#418762]">Continue learning <ArrowRight size={15} /></button></div><div className="mt-4 grid grid-cols-3 gap-3 text-center"><div className="rounded-xl bg-[#eee9f9] p-3"><p className="text-xl font-semibold text-[#62548e]">24</p><p className="mt-1 text-[10px] text-[#8c82ae]">mastered</p></div><div className="rounded-xl bg-[#fff0e1] p-3"><p className="text-xl font-semibold text-[#9b663c]">68%</p><p className="mt-1 text-[10px] text-[#bb8861]">progress</p></div><div className="rounded-xl bg-[#e5f2eb] p-3"><p className="text-xl font-semibold text-[#377b60]">5 days</p><p className="mt-1 text-[10px] text-[#5c9f7a]">streak</p></div></div></div></section><section id="features" className="mx-auto max-w-6xl px-6 pb-24 md:px-14"><p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#4e9a72]">A better learning loop</p><h2 className="mx-auto mt-3 max-w-2xl text-center font-serif text-4xl font-semibold text-[#243b52]">Learn → Practise → Assess → Improve</h2><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{['AI Tutor','Smart Quizzes','Explainable weakness detection','Prerequisite learning','Adaptive study planner','Learning streaks'].map((feature, i) => <div key={feature} className="rounded-2xl border border-[#e1e9ef] bg-white p-5"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e9f3fb] text-[#247eb7]"><Sparkles size={16} /></span><h3 className="mt-4 font-semibold text-[#304039]">{feature}</h3><p className="mt-2 text-xs leading-5 text-[#849199]">Textbook-grounded guidance that adapts to how you learn.</p></div>)}</div></section></main></div>
+}
+
+function Onboarding({ onComplete }: { onComplete: (choices: { className: string; board: string; subjects: string[] }) => void }) {
+  const [step, setStep] = useState(1)
+  const [selected, setSelected] = useState<string[]>(['Science'])
+  const subjects = ['Mathematics', 'Science', 'English', 'Social Science']
+  const titles = ['Which class are you in?', 'Choose your education board', 'What would you like to learn?', 'Which subjects feel tricky?', 'Set your learning preferences', 'Your personalized diagnostic']
+  const toggle = (item: string) => setSelected((current) => current.includes(item) ? current.filter((x) => x !== item) : [...current, item])
+  return <div className="min-h-screen bg-[#f6f9fc] px-5 py-8 text-[#26312d] md:px-10"><div className="mx-auto max-w-2xl"><div className="flex items-center justify-between"><div className="font-serif text-2xl font-semibold">Study<span className="text-[#247eb7]">Verse</span></div><span className="text-xs font-semibold text-[#829087]">Step {step} of 6</span></div><div className="mt-8 flex gap-2">{Array.from({ length: 6 }).map((_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? 'bg-[#247eb7]' : 'bg-[#dce8ef]'}`} />)}</div><section className="mt-14 rounded-3xl border border-[#e1e9ef] bg-white p-7 shadow-sm md:p-10"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4e9a72]">Personalize your path</p><h1 className="mt-3 font-serif text-4xl font-semibold text-[#243b52]">{titles[step - 1]}</h1><p className="mt-3 text-sm leading-6 text-[#829087]">{step === 4 ? 'Choose any subjects you want us to prioritize. You can skip this and we will still detect gaps through your quizzes.' : step === 6 ? 'A short combined quiz helps us understand what you truly know before making recommendations.' : 'You can edit these choices anytime from your profile.'}</p>{step <= 2 && <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">{(step === 1 ? ['Class 6','Class 7','Class 8','Class 9','Class 10'] : ['CBSE','ICSE','State board']).map((item) => <button key={item} onClick={() => toggle(item)} className={`rounded-2xl border p-4 text-left text-sm font-semibold ${selected.includes(item) || (step === 2 && item === 'CBSE') ? 'border-[#63ad86] bg-[#eef8f1] text-[#377b60]' : 'border-[#e1e9ef] text-[#718096]'}`}>{item}{step === 2 && item !== 'CBSE' && <span className="mt-1 block text-[10px] font-normal text-[#a2aba5]">Coming later</span>}</button>)}</div>}{step === 3 || step === 4 ? <div className="mt-8 grid gap-3 sm:grid-cols-2">{subjects.map((item) => <button key={item} onClick={() => toggle(item)} className={`rounded-2xl border p-4 text-left text-sm font-semibold ${selected.includes(item) ? 'border-[#63ad86] bg-[#eef8f1] text-[#377b60]' : 'border-[#e1e9ef] text-[#718096]'}`}>{selected.includes(item) && <Check size={16} className="mr-2 inline" />}{item}</button>)}</div> : null}{step === 5 && <div className="mt-8 grid gap-3 sm:grid-cols-2">{['20 minutes','30 minutes','45 minutes','1 hour'].map((item) => <button key={item} onClick={() => toggle(item)} className="rounded-2xl border border-[#e1e9ef] p-4 text-left text-sm font-semibold text-[#718096] hover:border-[#63ad86]">{item}</button>)}</div>}{step === 6 && <div className="mt-8 rounded-2xl bg-[#f1f8f4] p-5"><div className="flex items-center gap-3"><BrainCircuit className="text-[#4e9a72]" /><div><p className="font-semibold text-[#304039]">Combined Class 8 diagnostic</p><p className="mt-1 text-xs text-[#829087]">Science + Mathematics · 12 questions · about 10 minutes</p></div></div></div>}<div className="mt-10 flex items-center justify-between gap-3"><button onClick={() => step === 4 ? setStep(5) : setStep(Math.max(1, step - 1))} className="text-sm font-semibold text-[#829087]">{step === 1 ? 'Back to home' : 'Back'}</button><div className="flex items-center gap-3">{step === 4 && <button onClick={() => setStep(5)} className="text-sm font-semibold text-[#4e9a72]">Skip for now</button>}<button onClick={() => step === 6 ? onComplete({ className: 'Class 8', board: 'CBSE', subjects: selected }) : setStep(step + 1)} className="flex items-center gap-2 rounded-xl bg-[#174a7e] px-5 py-3 text-sm font-semibold text-white">{step === 6 ? 'Start diagnostic' : 'Continue'} <ArrowRight size={16} /></button></div></div></section></div></div>
+}
+
+type DiagnosticQuestion = {
+  subject: string
+  topic: string
+  question: string
+  options: string[]
+  answer: number
+  explanation: string
+  prerequisite: string
+}
+
+const diagnosticQuestions: DiagnosticQuestion[] = [
+  { subject: 'Mathematics', topic: 'Comparing quantities', question: 'Which fraction is equivalent to 3/4?', options: ['6/8', '4/6', '9/16', '12/20'], answer: 0, explanation: 'Multiplying both numerator and denominator by 2 gives 6/8, which has the same value as 3/4.', prerequisite: 'Fractions and equivalent fractions' },
+  { subject: 'Science', topic: 'Microorganisms', question: 'Which microorganism is commonly used to make bread rise?', options: ['Algae', 'Yeast', 'Virus', 'Protozoa'], answer: 1, explanation: 'Yeast releases carbon dioxide during fermentation. The gas gets trapped in the dough and makes it rise.', prerequisite: 'Useful microorganisms' },
+  { subject: 'Mathematics', topic: 'Linear equations', question: 'If x + 7 = 12, what is x?', options: ['3', '5', '7', '19'], answer: 1, explanation: 'Subtract 7 from both sides: x = 12 − 7 = 5.', prerequisite: 'Operations with integers' },
+]
+
+function DiagnosticQuiz({ profile, onComplete }: { profile: { className: string; board: string; subjects: string[] }; onComplete: () => void }) {
+  const [questionIndex, setQuestionIndex] = useState(0)
+  const [selected, setSelected] = useState<number | null>(null)
+  const [submitted, setSubmitted] = useState(false)
+  const [reasoning, setReasoning] = useState('')
+  const [confidence, setConfidence] = useState('Medium')
+  const [hintLevel, setHintLevel] = useState(0)
+  const [results, setResults] = useState<{ correct: boolean; explained: boolean; hintsUsed: number }[]>([])
+  const question = diagnosticQuestions[questionIndex]
+  const hintSteps = [
+    `Concept clue: connect this question to ${question.prerequisite.toLowerCase()}.`,
+    `Principle prompt: recall the rule or relationship that helps with ${question.topic.toLowerCase()}.`,
+    `Scaffold: work through the options one step at a time, then check which choice matches the principle.`,
+  ]
+  const hintUsed = hintLevel > 0
+  const showNextHint = () => setHintLevel((level) => Math.min(level + 1, hintSteps.length))
+  const answered = submitted && selected !== null
+  const submit = () => { if (selected !== null) setSubmitted(true) }
+  const next = () => {
+    if (selected === null) return
+    setResults((items) => [...items, { correct: selected === question.answer, explained: reasoning.trim().length >= 18, hintsUsed: hintLevel }])
+    if (questionIndex === diagnosticQuestions.length - 1) onComplete()
+    else { setQuestionIndex((value) => value + 1); setSelected(null); setSubmitted(false); setReasoning(''); setConfidence('Medium'); setHintLevel(0) }
+  }
+  return <div className="min-h-screen bg-[#f6f9fc] px-5 py-8 text-[#26312d] md:px-10"><div className="mx-auto max-w-3xl"><div className="flex items-center justify-between"><div className="font-serif text-2xl font-semibold">Study<span className="text-[#247eb7]">Verse</span></div><span className="rounded-full bg-[#e8f5ee] px-3 py-1 text-xs font-semibold text-[#37815e]">Demo diagnostic mode</span></div><div className="mt-10 flex items-center justify-between text-xs font-semibold text-[#829087]"><span>Question {questionIndex + 1} of {diagnosticQuestions.length}</span><span>{profile.className} · {profile.board}</span></div><div className="mt-3 h-2 rounded-full bg-[#dce8ef]"><div className="h-full rounded-full bg-[#247eb7] transition-all" style={{ width: `${((questionIndex + 1) / diagnosticQuestions.length) * 100}%` }} /></div><section className="mt-8 rounded-3xl border border-[#e1e9ef] bg-white p-7 shadow-sm md:p-10"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-[#eaf5fb] px-3 py-1 text-[11px] font-semibold text-[#247eb7]">{question.subject}</span><span className="rounded-full bg-[#f0f6f1] px-3 py-1 text-[11px] font-semibold text-[#4e9a72]">{question.topic}</span></div><h1 className="mt-6 font-serif text-3xl font-semibold leading-tight text-[#243b52] md:text-4xl">{question.question}</h1><div className="mt-7 grid gap-3">{question.options.map((option, index) => <button key={option} onClick={() => !submitted && setSelected(index)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left text-sm transition ${selected === index ? 'border-[#247eb7] bg-[#eaf5fb] text-[#174a7e]' : 'border-[#e1e9ef] text-[#718096] hover:border-[#a9c9dd]'} ${submitted && index === question.answer ? 'border-[#63ad86] bg-[#eef8f1] text-[#377b60]' : ''}`}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#f1f5f8] text-xs font-semibold">{String.fromCharCode(65 + index)}</span>{option}</button>)}</div><div className="mt-6 flex flex-wrap items-center gap-3"><button onClick={() => showNextHint()} className="flex items-center gap-2 rounded-xl border border-[#e2eaf2] px-3 py-2 text-xs font-semibold text-[#8a7653]"><Lightbulb size={14} />{hintUsed ? 'Hint used: think about the process' : 'Need a hint?'}</button><label className="ml-auto flex items-center gap-2 text-xs text-[#829087]">Confidence<select value={confidence} onChange={(event) => setConfidence(event.target.value)} className="rounded-lg border border-[#e1e9ef] bg-white px-2 py-1 text-xs"><option>Low</option><option>Medium</option><option>High</option></select></label></div>{!submitted ? <button onClick={submit} disabled={selected === null} className="mt-7 w-full rounded-xl bg-[#174a7e] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Submit answer</button> : <div className="mt-7 rounded-2xl bg-[#f7faf7] p-5"><p className="text-sm font-semibold text-[#377b60]">{selected === question.answer ? 'Correct answer. Now show your thinking.' : 'Let’s inspect the misconception.'}</p><p className="mt-2 text-xs leading-5 text-[#718096]">{question.explanation}</p><label className="mt-5 block text-xs font-semibold text-[#526057]">Can you explain why this answer is correct?<textarea value={reasoning} onChange={(event) => setReasoning(event.target.value)} placeholder="Write a short explanation in your own words…" className="mt-2 min-h-24 w-full resize-none rounded-xl border border-[#dfe8e2] bg-white p-3 text-sm font-normal outline-none focus:border-[#63ad86]" /></label><p className="mt-3 text-[11px] leading-5 text-[#99a39d]">We score your answer and explanation separately. A correct choice without a clear explanation is marked as uncertain understanding.</p><button onClick={next} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#174a7e] px-4 py-3 text-sm font-semibold text-white">{questionIndex === diagnosticQuestions.length - 1 ? 'See my diagnostic report' : 'Submit reasoning'} <ArrowRight size={15} /></button></div>}</section><p className="mt-5 text-center text-[11px] leading-5 text-[#9aa49e]">Your responses, hint usage, confidence, topic, and prerequisite context are saved for this demo session. Natural-language evaluation requires an AI backend.</p></div></div>
+}
+
+function DiagnosticReport({ onContinue }: { onContinue: () => void }) {
+  return <div className="min-h-screen bg-[#f6f9fc] px-5 py-8 text-[#26312d] md:px-10"><div className="mx-auto max-w-4xl"><div className="flex items-center justify-between"><div className="font-serif text-2xl font-semibold">Study<span className="text-[#247eb7]">Verse</span></div><span className="rounded-full bg-[#e8f5ee] px-3 py-1 text-xs font-semibold text-[#37815e]">Diagnostic report</span></div><section className="mt-12"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4e9a72]">Your starting point</p><h1 className="mt-3 font-serif text-4xl font-semibold text-[#243b52] md:text-5xl">Here&apos;s what we&apos;ll focus on next.</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-[#718096]">This transparent demo report uses answer correctness and explanation quality as separate signals. It does not claim definitive mastery from one question.</p><div className="mt-8 grid gap-4 md:grid-cols-3"><div className="rounded-2xl bg-[#dff2e9] p-5"><p className="text-xs font-semibold text-[#4c8d6b]">Overall score</p><p className="mt-3 text-4xl font-semibold text-[#2e7655]">67%</p><p className="mt-2 text-xs text-[#63a57e]">Moderate evidence strength</p></div><div className="rounded-2xl bg-[#eee9f9] p-5"><p className="text-xs font-semibold text-[#7769a1]">Demonstrated understanding</p><p className="mt-3 text-2xl font-semibold text-[#62548e]">1 topic</p><p className="mt-2 text-xs text-[#8c82ae]">Science · microorganisms</p></div><div className="rounded-2xl bg-[#fff0e1] p-5"><p className="text-xs font-semibold text-[#ae7444]">Needs evidence</p><p className="mt-3 text-2xl font-semibold text-[#9b663c]">2 topics</p><p className="mt-2 text-xs text-[#bb8861]">Fractions · equations</p></div></div><div className="mt-6 grid gap-4 md:grid-cols-2"><article className="rounded-2xl border border-[#e5eae5] bg-white p-6"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#b07845]">Uncertain understanding</p><h2 className="mt-3 font-serif text-2xl font-semibold text-[#34433b]">Fractions and equivalent fractions</h2><p className="mt-3 text-sm leading-6 text-[#7d8982]">We need a clearer explanation or another question before calling this mastered. Hint use and confidence are context, not penalties.</p></article><article className="rounded-2xl border border-[#e5eae5] bg-white p-6"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#247eb7]">Potential prerequisite gap</p><h2 className="mt-3 font-serif text-2xl font-semibold text-[#34433b]">Operations with integers</h2><p className="mt-3 text-sm leading-6 text-[#7d8982]">We&apos;ll revisit this foundation before linear equations and explain each recommendation as your evidence changes.</p></article></div><button onClick={onContinue} className="mt-8 flex items-center gap-2 rounded-xl bg-[#174a7e] px-5 py-3.5 text-sm font-semibold text-white">Open my personalized dashboard <ArrowRight size={16} /></button></section></div></div>
+}
+
+const prerequisiteTopics = [
+  { title: 'Fractions and equivalent fractions', current: 'Comparing Quantities', foundation: 'Class 6 · Mathematics · Fractions', why: 'Percentages and ratios are built from fraction relationships.', time: '12 min', evidence: 'Quiz signal: 42% accuracy', status: 'Needs review' },
+  { title: 'Operations with integers', current: 'Linear Equations', foundation: 'Class 7 · Mathematics · Integers', why: 'Balancing an equation depends on undoing operations confidently.', time: '8 min', evidence: 'Explanation signal: incomplete reasoning', status: 'Recommended' },
+]
+
+function FoundationCard({ topic, onNotify }: { topic: typeof prerequisiteTopics[number]; onNotify: (message: string) => void }) {
+  const [expanded, setExpanded] = useState(false)
+  return <article className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fff0e1] text-[#c6814f]"><BrainCircuit size={19} /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#b07845]">Foundation gap</span><span className="rounded-full bg-[#f7f2e9] px-2 py-1 text-[10px] font-semibold text-[#a47b3e]">{topic.status}</span></div><h3 className="mt-2 font-serif text-xl font-semibold text-[#34433b]">{topic.title}</h3><p className="mt-1 text-xs text-[#87928a]">Needed for <span className="font-semibold text-[#617168]">{topic.current}</span> · {topic.foundation}</p></div></div><div className="mt-5 rounded-xl bg-[#fffaf4] p-4"><p className="text-sm font-semibold text-[#755b3d]">Let&apos;s strengthen your basics first.</p><p className="mt-1 text-xs leading-5 text-[#927b60]">{topic.why}</p><div className="mt-3 flex flex-wrap gap-3 text-[11px] text-[#a18058]"><span>{topic.time} lesson</span><span>{topic.evidence}</span></div></div><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => onNotify(`Foundation lesson started: ${topic.title}`)} className="rounded-xl bg-[#174a7e] px-4 py-2.5 text-xs font-semibold text-white">Start foundation lesson</button><button onClick={() => { setExpanded(!expanded); onNotify(expanded ? 'Foundation details hidden' : 'Evidence details opened') }} className="rounded-xl border border-[#e2e8e2] px-4 py-2.5 text-xs font-semibold text-[#65756b]">{expanded ? 'Hide evidence' : 'Why was this recommended?'}</button><button onClick={() => onNotify(`Skipped ${topic.title}; evidence saved`)} className="px-2 py-2 text-xs font-semibold text-[#6a9b7d]">I know this already</button></div>{expanded && <div className="mt-4 border-t border-[#eef1ed] pt-4 text-xs leading-5 text-[#78877e]">StudyVerse combines correctness, confidence, and explanation quality. Your saved evidence stays attached to this topic if you skip the lesson.</div>}</article>
+}
+
+function LearningWorkspace({ onNotify }: { onNotify: (message: string) => void }) {
+  return <section className="min-h-[70vh]"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#6aaa89]">StudyVerse · My Learning</p><h1 className="font-serif text-4xl font-semibold text-[#25332c] md:text-5xl">Your learning journey</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-[#7d8982]">Go deeper than a chapter list. When a topic depends on an earlier idea, we show the connection and let you strengthen it without losing your place.</p><div className="mt-8 rounded-2xl border border-[#d9e8e0] bg-[#eef8f1] p-5"><div className="flex items-start gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[#3e9368]"><Sparkles size={17} /></span><div><p className="text-sm font-semibold text-[#356f53]">Two learning paths are ready</p><p className="mt-1 text-xs leading-5 text-[#6e8e7b]">Your topic graph found foundations that can unlock the next chapters. You can study them, skip them with evidence, or return later.</p></div></div></div><div className="mt-8 grid gap-4 lg:grid-cols-2">{prerequisiteTopics.map((topic) => <FoundationCard key={topic.title} topic={topic} onNotify={onNotify} />)}</div><div className="mt-8 rounded-2xl border border-[#e5eae5] bg-white p-5"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#a2aba5]">Topic relationship map</p><h2 className="mt-2 font-serif text-2xl font-semibold text-[#304039]">What unlocks what</h2></div><button onClick={() => onNotify('Topic graph expanded')} className="rounded-xl border border-[#e2e8e2] px-3 py-2 text-xs font-semibold text-[#5d9272]">Explore graph</button></div><div className="mt-6 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-xl bg-[#f7f2e9] px-3 py-2 font-semibold text-[#9a7143]">Fractions</span><ArrowRight size={14} className="text-[#b9c3bb]" /><span className="rounded-xl bg-[#eaf5fb] px-3 py-2 font-semibold text-[#247eb7]">Comparing Quantities</span><ArrowRight size={14} className="text-[#b9c3bb]" /><span className="rounded-xl bg-[#eef8f1] px-3 py-2 font-semibold text-[#418762]">Algebraic Expressions</span></div></div></section>
+}
+
+function TutorWorkspace({ onNotify }: { onNotify: (message: string) => void }) {
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('Try asking a question about the selected chapter.')
+  const ask = () => { const text = question.trim(); if (!text) return; setAnswer(`Demo tutor response: Think of a percentage as a fraction out of 100. For example, 25% means 25/100, which simplifies to 1/4. This explanation is based on the StudyVerse sample textbook index, not a live model.`); setQuestion(''); onNotify('Demo explanation ready') }
+  return <section className="min-h-[70vh]"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#6aaa89]">StudyVerse · AI Tutor</p><div className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="font-serif text-4xl font-semibold text-[#25332c] md:text-5xl">Ask anything, understand everything</h1><p className="mt-4 max-w-xl text-sm leading-7 text-[#7d8982]">Textbook-grounded explanations, with a clear demo label until a live AI provider is connected.</p></div><span className="rounded-full bg-[#f7f2e9] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#a47b3e]">Demo tutor mode</span></div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_300px]"><div className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-7"><div className="flex flex-wrap gap-2"><span className="rounded-lg bg-[#eaf5fb] px-3 py-1.5 text-[11px] font-semibold text-[#247eb7]">Class 8</span><span className="rounded-lg bg-[#eef8f1] px-3 py-1.5 text-[11px] font-semibold text-[#418762]">Mathematics</span><span className="rounded-lg bg-[#f4f6f3] px-3 py-1.5 text-[11px] font-semibold text-[#78877e]">Comparing Quantities</span></div><div className="mt-8 rounded-2xl bg-[#f7faf8] p-5"><p className="text-xs font-bold uppercase tracking-[0.15em] text-[#a2aba5]">Tutor response</p><p className="mt-3 text-sm leading-7 text-[#53655b]">{answer}</p><div className="mt-4 flex flex-wrap gap-2"><button onClick={() => setAnswer('Simpler explanation: percent means “out of one hundred.” So 50% is 50 out of 100, or one half.')} className="rounded-lg border border-[#dde8df] px-3 py-2 text-[11px] font-semibold text-[#5a9070]">Make it simpler</button><button onClick={() => setAnswer('Example: If a ₹200 bag has a 10% discount, the discount is ₹20, so you pay ₹180.')} className="rounded-lg border border-[#dde8df] px-3 py-2 text-[11px] font-semibold text-[#5a9070]">Give an example</button><button onClick={() => onNotify('Quiz opened for Comparing Quantities')} className="rounded-lg bg-[#174a7e] px-3 py-2 text-[11px] font-semibold text-white">Open topic quiz</button></div></div><div className="mt-5 flex gap-2"><input value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.nativeEvent.isComposing || event.keyCode === 229) return; if (event.key === 'Enter') ask() }} placeholder="Ask a question about this topic..." aria-label="Ask a question" className="min-w-0 flex-1 rounded-xl border border-[#dfe8e1] px-4 py-3 text-sm outline-none focus:border-[#247eb7]" /><button onClick={ask} className="rounded-xl bg-[#174a7e] px-4 py-3 text-xs font-semibold text-white">Ask tutor</button></div></div><aside className="rounded-2xl border border-[#e5eae5] bg-white p-5"><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#a2aba5]">Textbook context</p><h2 className="mt-2 font-serif text-xl font-semibold text-[#304039]">Sources used</h2><p className="mt-3 text-xs leading-5 text-[#87928a]">Sample content is available for this demo. Live PDF extraction and retrieval will plug into the same metadata contract.</p><div className="mt-5 space-y-3"><div className="rounded-xl bg-[#f7faf8] p-3"><p className="text-xs font-semibold text-[#51655a]">NCERT Class 8 Mathematics</p><p className="mt-1 text-[11px] text-[#8b968f]">Chapter 8 · Comparing Quantities · sample index</p></div><button onClick={() => onNotify('Follow-up question ready')} className="w-full rounded-xl border border-[#dde8df] px-3 py-2.5 text-xs font-semibold text-[#5a9070]">Ask a follow-up</button></div></aside></div></section>
+}
+
+export default function Page() {
+  return (
+    <StudyVerseProvider>
+      <StudyVerseApp />
+      <Celebration />
+    </StudyVerseProvider>
+  )
+}
+
+const TRACKED_SUBJECTS = ['Mathematics', 'Science']
+
+function StudyVerseApp() {
+  const { setPracticeTopic, updateSettings, practiceTopicId } = useStudyVerse()
+  const [view, setView] = useState<'landing' | 'onboarding' | 'diagnostic' | 'report' | 'dashboard'>('landing')
+  const [profile, setProfile] = useState({ className: 'Class 8', board: 'CBSE', subjects: ['Science'] })
+  const [activeNav, setActiveNav] = useState<string>('Overview')
+  const go = (nav: NavLabel, topicId?: string) => {
+    if (topicId) setPracticeTopic(topicId)
+    setActiveNav(nav)
+    setMobileNav(false)
+    window.scrollTo({ top: 0 })
+  }
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [mobileNav, setMobileNav] = useState(false)
+  const [toast, setToast] = useState('')
+
+  const notify = (message: string) => {
+    setToast(message)
+    window.setTimeout(() => setToast(''), 2400)
+  }
+
+  if (view === 'landing') return <Landing onStart={() => setView('onboarding')} />
+  if (view === 'onboarding') return <Onboarding onComplete={(choices) => { setProfile(choices); const tricky = choices.subjects.filter((s) => TRACKED_SUBJECTS.includes(s)); if (tricky.length) updateSettings({ weakSubjects: tricky }); setView('diagnostic') }} />
+  if (view === 'diagnostic') return <DiagnosticQuiz profile={profile} onComplete={() => setView('report')} />
+  if (view === 'report') return <DiagnosticReport onContinue={() => { setView('dashboard'); setActiveNav('Overview'); setToast('Diagnostic complete — your personalized plan is ready') }} />
+
+  return (
+    <div className="min-h-screen bg-[#f6f9fc] text-[#26312d]">
+      <aside className={`fixed inset-y-0 z-40 flex w-[254px] flex-col border-r border-[#e7ebe6] bg-[#fbfcfa] px-5 py-6 transition-[left] duration-200 lg:left-0 ${mobileNav ? 'left-0' : '-left-[254px]'}`}>
+        <div className="mb-12 flex items-center justify-between px-2">
+          <button className="flex items-center gap-3" onClick={() => setActiveNav('Overview')} aria-label="StudyVerse home">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#dff2e9] text-[#2e8a64]"><Sparkles size={19} strokeWidth={2.3} /></span>
+            <span><span className="block font-serif text-[21px] font-semibold tracking-tight text-[#24342d]">Study<span className="text-[#38a477]">Verse</span></span><span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-[#9aa49e]">Learn smarter</span></span>
+          </button>
+          <button className="text-[#83908a] lg:hidden" onClick={() => setMobileNav(false)} aria-label="Close navigation"><X size={20} /></button>
+        </div>
+        <nav className="space-y-1" aria-label="Main navigation">
+          {navItems.map(({ label, icon: Icon }) => <button key={label} onClick={() => { setActiveNav(label); setMobileNav(false) }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium transition ${activeNav === label ? 'bg-[#e8f5ee] text-[#26835f]' : 'text-[#78837d] hover:bg-[#f0f4f0] hover:text-[#384640]'}`}><Icon size={18} strokeWidth={1.9} /><span>{label}</span>{label === 'Ask a Doubt' && <span className="ml-auto rounded-full bg-[#f0e8d7] px-2 py-0.5 text-[10px] text-[#a47b3e]">AI</span>}</button>)}
+        </nav>
+        <div className="mt-9 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#b1b9b3]">Your space</div>
+        <nav className="mt-2 space-y-1"><button onClick={() => go('Achievements')} aria-current={activeNav === 'Achievements' ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium hover:bg-[#f0f4f0] ${activeNav === 'Achievements' ? 'bg-[#eaf5fb] text-[#174a7e]' : 'text-[#78837d]'}`}><Trophy size={18} strokeWidth={1.9} />Achievements</button><button onClick={() => go('Study Planner')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium text-[#78837d] hover:bg-[#f0f4f0]"><Target size={18} strokeWidth={1.9} />My goals</button></nav>
+        <SidebarStreak onOpen={() => go('Achievements')} />
+      </aside>
+
+      <div className="lg:pl-[254px]">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-[#e7ebe6] bg-[#f6f9fc]/95 px-5 backdrop-blur md:px-10">
+          <div className="flex items-center gap-3"><button className="text-[#65736b] lg:hidden" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={22} /></button><div className="hidden items-center gap-2 text-xs text-[#94a099] sm:flex"><HeaderDate /><span className="h-1 w-1 rounded-full bg-[#c9d1cb]" /><span>{profile.className} · {profile.board}</span></div></div>
+          <div className="flex items-center gap-5"><button className="hidden rounded-xl border border-[#e2e8e2] bg-white px-3 py-2 text-xs text-[#83908a] sm:flex sm:items-center sm:gap-2"><Search size={15} /> Search anything</button><div className="relative"><button onClick={() => setShowNotifications(!showNotifications)} className="relative text-[#819088]" aria-label="Notifications"><Bell size={19} strokeWidth={1.8} /><span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#ef9c70]" /></button>{showNotifications && <div className="absolute right-0 top-8 w-64 rounded-2xl border border-[#e7ebe6] bg-white p-4 text-xs shadow-xl"><p className="font-semibold text-[#34433a]">You have 2 new updates</p><p className="mt-2 text-[#87938b]">Your personalized plan is ready.</p></div>}</div><button onClick={() => notify('Profile menu opened')} className="flex items-center gap-2"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#eadfc9] text-xs font-semibold text-[#806846]">AS</span><ChevronDown size={14} className="text-[#a0aaa3]" /></button></div>
+        </header>
+
+        <main className="mx-auto max-w-[1220px] px-5 py-8 md:px-10 md:py-11">
+          {activeNav === 'My Learning' ? <LearningWorkspace onNotify={notify} /> : activeNav === 'Ask a Doubt' ? <TutorWorkspace onNotify={notify} /> : activeNav === 'Learning Gaps' ? <LearningGaps onNavigate={go} /> : activeNav === 'Study Planner' ? <StudyPlanner onNavigate={go} /> : activeNav === 'Practice' ? <PracticeQuiz key={practiceTopicId ?? 'practice'} onNavigate={go} /> : activeNav === 'Achievements' ? <Achievements onNavigate={go} /> : activeNav === 'Upload Resources' ? <UploadResources onNotify={notify} /> : <Overview onNavigate={go} />}
+        </main>
+      </div>
+      {toast && <div role="status" className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-[#304b3e] px-4 py-3 text-xs font-medium text-white shadow-xl"><Check size={15} className="text-[#9be0b5]" />{toast}</div>}
+    </div>
+  )
+}
+
+================================================================================
+FILE: components.json
+================================================================================
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+
+================================================================================
+FILE: components/studyverse/achievements.tsx
+================================================================================
+'use client'
+
+import { useEffect, useRef } from 'react'
+import { Flame, Sparkles, Trophy, X } from 'lucide-react'
+import { addDays, formatDateKey, TIME_ZONES, weekdayIndex } from '@/lib/studyverse/dates'
+import { MILESTONES, type EarnedReward } from '@/lib/studyverse/streak'
+import { useStudyVerse } from './store'
+import { badgeText, PageIntro, ProgressBar, RewardBadge, type Navigate } from './ui'
+
+const CONFETTI_COLORS = ['#58ad7f', '#247eb7', '#e09b69', '#9d8cca', '#e0b44a']
+
+export function Celebration() {
+  const { celebration, dismissCelebration } = useStudyVerse()
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!celebration) return
+    closeRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissCelebration() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [celebration, dismissCelebration])
+  if (!celebration) return null
+  return (
+    <div className="fixed inset-0 z-[60] grid place-items-center bg-[#16263a]/40 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="celebration-title">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        {Array.from({ length: 36 }).map((_, i) => (
+          <span key={i} className="sv-confetti" style={{ left: `${(i * 37) % 100}%`, background: CONFETTI_COLORS[i % CONFETTI_COLORS.length], animationDelay: `${(i % 9) * 0.12}s`, animationDuration: `${2.4 + (i % 5) * 0.3}s` }} />
+        ))}
+      </div>
+      <div className="relative w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl">
+        <button ref={closeRef} onClick={dismissCelebration} className="absolute right-4 top-4 text-[#a0aaa3]" aria-label="Close"><X size={18} /></button>
+        <div className="flex justify-center"><RewardBadge milestone={celebration.milestone} earned size="lg" /></div>
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#4e9a72]">{celebration.milestone.days}-day milestone</p>
+        <h2 id="celebration-title" className="mt-2 font-serif text-3xl font-semibold text-[#243b52]">{celebration.milestone.name}</h2>
+        <p className="mt-3 text-sm leading-6 text-[#718096]">You met your study goal {celebration.milestone.days} days in a row. You&apos;ve unlocked the <strong>{celebration.milestone.cosmetic}</strong>.</p>
+        <button onClick={dismissCelebration} className="mt-6 w-full rounded-xl bg-[#174a7e] px-4 py-3 text-sm font-semibold text-white">Keep learning</button>
+      </div>
+    </div>
+  )
+}
+
+function RewardHistory({ rewards }: { rewards: EarnedReward[] }) {
+  if (!rewards.length) return <p className="rounded-2xl border border-dashed border-[#dfe5e0] p-5 text-xs leading-5 text-[#87928a]">No rewards yet. Your first badge, Bronze Learner, unlocks after 10 days in a row of meeting your goal.</p>
+  return (
+    <ul className="space-y-3">
+      {[...rewards].reverse().map((r) => (
+        <li key={r.milestone.id} className="flex items-center gap-4 rounded-2xl border border-[#e5eae5] bg-white p-4">
+          <RewardBadge milestone={r.milestone} earned />
+          <div className="min-w-0 flex-1">
+            <p className={`text-sm font-semibold ${badgeText(r.milestone)}`}>{r.milestone.name}</p>
+            <p className="mt-0.5 text-[11px] text-[#87928a]">Earned {formatDateKey(r.earnedOn, { day: 'numeric', month: 'long', year: 'numeric' })} · {r.milestone.cosmetic}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function Achievements({ onNavigate }: { onNavigate: Navigate }) {
+  const { streak, today, settings } = useStudyVerse()
+  const earned = new Set(streak.rewards.map((r) => r.milestone.id))
+  const next = streak.next
+  const prevMilestoneDays = [...MILESTONES].reverse().find((m) => m.days <= streak.current)?.days ?? 0
+  const remainingToday = Math.max(0, streak.todayGoal - streak.todayMinutes)
+  const missedYesterday = !streak.met(addDays(today, -1))
+
+  const start = addDays(today, -34 - ((weekdayIndex(today) + 6) % 7))
+  const calendarDays = Array.from({ length: 35 + ((weekdayIndex(today) + 6) % 7) + 1 }, (_, i) => addDays(start, i)).slice(-42)
+  const tzLabel = TIME_ZONES.find((t) => t.value === settings.timeZone)?.label ?? settings.timeZone
+
+  return (
+    <section>
+      <PageIntro eyebrow="Achievements" title="Streaks and rewards" description={`A day counts once you finish ${settings.dailyMinutes} minutes of planned tasks or quizzes. Just opening StudyVerse doesn't count. Days follow your time zone: ${tzLabel}.`} />
+
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl bg-[#fff0e1] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#ae7444]">Current streak</span><Flame size={18} className="text-[#d69868]" fill="currentColor" /></div>
+          <p className="mt-4 text-4xl font-semibold text-[#9b663c]">{streak.current} <span className="text-base font-medium">day{streak.current === 1 ? '' : 's'}</span></p>
+          <p className="mt-2 text-[11px] leading-5 text-[#ae7444]">{streak.todayMet ? 'Today is counted. Great work!' : streak.current > 0 ? `${remainingToday} more minutes today keeps it growing.` : 'One completed goal today starts a new streak.'}</p>
+        </div>
+        <div className="rounded-2xl bg-[#eee9f9] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#7769a1]">Longest streak</span><Trophy size={18} className="text-[#978ac2]" /></div>
+          <p className="mt-4 text-4xl font-semibold text-[#62548e]">{streak.longest} <span className="text-base font-medium">days</span></p>
+          <p className="mt-2 text-[11px] text-[#7769a1]">Your personal best so far.</p>
+        </div>
+        <div className="rounded-2xl bg-[#dff2e9] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#4c8d6b]">Today&apos;s goal</span><Sparkles size={18} className="text-[#69ae88]" /></div>
+          <p className="mt-4 text-4xl font-semibold text-[#2e7655]">{streak.todayMinutes}<span className="text-base font-medium">/{streak.todayGoal} min</span></p>
+          <div className="mt-3"><ProgressBar value={(streak.todayMinutes / streak.todayGoal) * 100} trackClassName="bg-[#c4e5d1]" label="Today's goal" /></div>
+          {!streak.todayMet && <button onClick={() => onNavigate('Study Planner')} className="mt-3 text-[11px] font-semibold text-[#2e7655]">Open today&apos;s plan</button>}
+        </div>
+      </div>
+
+      {missedYesterday && streak.longest > 0 && (
+        <p className="mt-5 rounded-2xl border border-[#d9e8e0] bg-[#f6fbf8] p-4 text-xs leading-5 text-[#4c7a62]">Welcome back. Everything you&apos;ve learned is still here. A short session today is a great way to pick things up again.</p>
+      )}
+
+      <div className="mt-8 rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a0aaa3]">Milestones</p>
+            <h2 className="mt-1 font-serif text-2xl font-semibold text-[#304039]">{next ? `${next.days - streak.current} day${next.days - streak.current === 1 ? '' : 's'} to ${next.name}` : 'All milestones reached'}</h2>
+          </div>
+          {next && <span className="text-xs text-[#87928a]">{streak.current}/{next.days} days</span>}
+        </div>
+        {next && <div className="mt-4"><ProgressBar value={((streak.current - prevMilestoneDays) / (next.days - prevMilestoneDays)) * 100} barClassName="bg-[#e0b44a]" label="Progress to next milestone" /></div>}
+        <ul className="mt-6 grid gap-4 sm:grid-cols-3">
+          {MILESTONES.map((m) => (
+            <li key={m.id} className={`flex items-center gap-3 rounded-2xl p-4 ${earned.has(m.id) ? 'bg-[#fbf8ef]' : 'bg-[#f7f9fb]'}`}>
+              <RewardBadge milestone={m} earned={earned.has(m.id)} />
+              <div>
+                <p className={`text-sm font-semibold ${earned.has(m.id) ? badgeText(m) : 'text-[#64748b]'}`}>{m.name}</p>
+                <p className="text-[11px] text-[#87928a]">{m.days} days · {earned.has(m.id) ? 'Unlocked' : m.cosmetic}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6">
+          <h2 className="font-serif text-2xl font-semibold text-[#304039]">Study activity</h2>
+          <div className="mt-5 grid grid-cols-7 gap-1.5 text-center text-[10px] font-semibold text-[#a0aaa3]">
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <span key={i}>{d}</span>)}
+          </div>
+          <div className="mt-2 grid grid-cols-7 gap-1.5">
+            {calendarDays.map((d) => {
+              const total = streak.totals.get(d)
+              const future = d > today
+              const met = streak.met(d)
+              const cls = future ? 'bg-transparent text-[#d0d6d2]' : met ? 'bg-[#58ad7f] text-white' : total?.minutes ? 'bg-[#cfe9da] text-[#2e7655]' : 'bg-[#f1f4f2] text-[#a0aaa3]'
+              return (
+                <div key={d} title={`${formatDateKey(d, { weekday: 'short', day: 'numeric', month: 'short' })}: ${total?.minutes ?? 0} min${met ? ' · goal met' : ''}`} className={`grid aspect-square place-items-center rounded-lg text-[11px] font-semibold ${cls} ${d === today ? 'ring-2 ring-[#247eb7] ring-offset-1' : ''}`}>
+                  {Number(d.slice(8))}
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-4 text-[11px] text-[#78877e]">
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[#58ad7f]" />Goal met</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[#cfe9da]" />Some study</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[#f1f4f2]" />No study</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded ring-2 ring-[#247eb7]" />Today</span>
+          </div>
+        </div>
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-[#304039]">Reward history</h2>
+          <div className="mt-5"><RewardHistory rewards={streak.rewards} /></div>
+          <p className="mt-4 text-[11px] leading-5 text-[#a0aaa3]">Rewards are in-app cosmetics. Each one is awarded once, and completing the same task twice never counts twice.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+================================================================================
+FILE: components/studyverse/learning-gaps.tsx
+================================================================================
+'use client'
+
+import { ArrowRight, CircleCheck, Info, ListChecks, TrendingDown, TrendingUp, Minus } from 'lucide-react'
+import { topicById } from '@/lib/studyverse/content'
+import { dateKeyInZone, formatDateKey } from '@/lib/studyverse/dates'
+import { dependentsOf, pct } from '@/lib/studyverse/engine'
+import type { Recommendation, TopicStat } from '@/lib/studyverse/types'
+import { useStudyVerse } from './store'
+import { DemoBadge, EvidenceBadge, PageIntro, StatusPill, type Navigate } from './ui'
+
+function TrendIcon({ trend }: { trend: TopicStat['trend'] }) {
+  if (trend === 'improving') return <span className="flex items-center gap-1 text-[11px] text-[#2e7655]"><TrendingUp size={13} /> Improving</span>
+  if (trend === 'declining') return <span className="flex items-center gap-1 text-[11px] text-[#ae7444]"><TrendingDown size={13} /> Dipped recently</span>
+  if (trend === 'steady') return <span className="flex items-center gap-1 text-[11px] text-[#718096]"><Minus size={13} /> Steady</span>
+  return <span className="text-[11px] text-[#718096]">One quiz so far</span>
+}
+
+function HistoryDots({ stat }: { stat: TopicStat }) {
+  return (
+    <div className="flex flex-wrap gap-1" aria-label={`Quiz history for ${stat.topic.short}`}>
+      {stat.history.map((h) => (
+        <span key={h.recordId} title={`${h.correct}/${h.total}`} className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${h.correct === h.total ? 'bg-[#e8f5ee] text-[#2e7655]' : h.correct === 0 ? 'bg-[#fff0e1] text-[#9b663c]' : 'bg-[#eaf5fb] text-[#1f6c9e]'}`}>{h.correct}/{h.total}</span>
+      ))}
+    </div>
+  )
+}
+
+function WeaknessCard({ stat, rec, onNavigate }: { stat: TopicStat; rec?: Recommendation; onNavigate: Navigate }) {
+  const wrong = stat.attempts - stat.correct
+  const prereq = stat.missingPrereqs[0]
+  const nextStep = prereq
+    ? `Revise ${prereq.short} first (${topicById(prereq.id).level}), then complete targeted practice on ${stat.topic.short}.`
+    : `Complete a short targeted practice set on ${stat.topic.short}, then review the explanations for any missed questions.`
+  return (
+    <article className="rounded-2xl border border-[#efe2d3] bg-white p-5 md:p-6">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusPill status={stat.status} />
+        <EvidenceBadge level={stat.evidence} />
+        {rec && <span className="rounded-full bg-[#f4f6f3] px-2.5 py-1 text-[10px] font-semibold text-[#5f6d65]">Priority: {rec.action}</span>}
+      </div>
+      <h3 className="mt-3 font-serif text-2xl font-semibold text-[#34433b]">{stat.topic.name}</h3>
+      <p className="mt-1 text-xs text-[#87928a]">{stat.topic.subject} · {stat.topic.level}</p>
+
+      <div className="mt-5 rounded-xl bg-[#fffaf4] p-4">
+        <p className="text-sm font-semibold text-[#755b3d]">Why is {stat.topic.short} recommended for revision?</p>
+        <p className="mt-1.5 text-xs leading-5 text-[#7d6448]">
+          You answered {wrong} of {stat.attempts} related question{stat.attempts === 1 ? '' : 's'} incorrectly
+          {stat.notes.length ? `, and ${stat.notes[stat.notes.length - 1].charAt(0).toLowerCase()}${stat.notes[stat.notes.length - 1].slice(1)}` : ''}.
+          {prereq ? ` Review ${prereq.short} and complete a short practice quiz.` : ' A short targeted practice quiz is the best next step.'}
+        </p>
+      </div>
+
+      <dl className="mt-5 grid gap-4 text-xs sm:grid-cols-2">
+        <div>
+          <dt className="font-semibold text-[#46544c]">Evidence</dt>
+          <dd className="mt-1 leading-5 text-[#78877e]">{stat.correct}/{stat.attempts} correct across {stat.history.length} quiz{stat.history.length === 1 ? '' : 'zes'} · estimate {pct(stat.estimate)}{stat.lastSeen ? ` · last seen ${formatDateKey(stat.lastSeen.slice(0, 10))}` : ''}</dd>
+          <dd className="mt-2"><HistoryDots stat={stat} /></dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#46544c]">Errors and concepts involved</dt>
+          <dd className="mt-1">
+            {stat.misconceptions.length ? (
+              <ul className="space-y-1">{stat.misconceptions.slice(0, 3).map((m) => <li key={m.label} className="leading-5 text-[#78877e]">{m.label} <span className="text-[#a0aaa3]">×{m.count}</span></li>)}</ul>
+            ) : <span className="text-[#78877e]">No repeated error pattern yet.</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#46544c]">Prerequisite that may be missing</dt>
+          <dd className="mt-1 leading-5 text-[#78877e]">{stat.missingPrereqs.length ? stat.missingPrereqs.map((p) => p.short).join(', ') : 'Prerequisites look secure.'}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-[#46544c]">What to do next</dt>
+          <dd className="mt-1 leading-5 text-[#78877e]">{nextStep}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className="font-semibold text-[#46544c]">How progress will be reassessed</dt>
+          <dd className="mt-1 leading-5 text-[#78877e]">A 4-question check on {stat.topic.short}. The estimate updates right away, and this card moves to &ldquo;uncertain&rdquo; or &ldquo;strength&rdquo; once the evidence supports it.</dd>
+        </div>
+      </dl>
+
+      {stat.evidence === 'Preliminary' && <p className="mt-4 flex items-start gap-2 rounded-lg bg-[#f7f2e9] p-3 text-[11px] leading-5 text-[#8a6534]"><Info size={14} className="mt-0.5 shrink-0" />Preliminary evidence. Based on fewer than 4 answers, so this may change quickly.</p>}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button onClick={() => onNavigate('Practice', stat.topic.id)} className="rounded-xl bg-[#174a7e] px-4 py-2.5 text-xs font-semibold text-white">Start targeted practice</button>
+        {prereq && <button onClick={() => onNavigate('Practice', prereq.id)} className="rounded-xl border border-[#e2e8e2] px-4 py-2.5 text-xs font-semibold text-[#65756b]">Check {prereq.short}</button>}
+      </div>
+    </article>
+  )
+}
+
+export function LearningGaps({ onNavigate }: { onNavigate: Navigate }) {
+  const { stats, recs, records, settings } = useStudyVerse()
+  const all = [...stats.values()]
+  const recFor = (id: string) => recs.find((r) => r.topic.id === id)
+  const weak = all.filter((s) => s.status === 'weak').sort((a, b) => (recFor(b.topic.id)?.score ?? 0) - (recFor(a.topic.id)?.score ?? 0))
+  const uncertain = all.filter((s) => s.status === 'uncertain' || s.status === 'unassessed')
+  const strengths = all.filter((s) => s.status === 'strength')
+  const prereqGaps = all.flatMap((s) => s.status === 'weak' || s.status === 'uncertain' ? s.missingPrereqs.map((p) => ({ prereq: stats.get(p.id) as TopicStat, dependent: s })) : [])
+  const history = [...records].sort((a, b) => b.takenAt.localeCompare(a.takenAt))
+
+  return (
+    <section>
+      <PageIntro eyebrow="My Learning Gaps" title="Your learning gaps, explained" description="Every finding below comes from your recorded quiz answers. We show the evidence, how strong it is, and how each finding will be re-checked. One wrong answer never defines you." badge={<DemoBadge>Demo records</DemoBadge>} />
+
+      <div className="mt-8 grid gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Needs attention', value: weak.length, className: 'bg-[#fff0e1] text-[#9b663c]' },
+          { label: 'Uncertain', value: uncertain.length, className: 'bg-[#eaf5fb] text-[#1f6c9e]' },
+          { label: 'Strengths', value: strengths.length, className: 'bg-[#e8f5ee] text-[#2e7655]' },
+          { label: 'Prerequisite gaps', value: prereqGaps.length, className: 'bg-[#eee9f9] text-[#62548e]' },
+        ].map((c) => (
+          <div key={c.label} className={`rounded-2xl p-4 ${c.className}`}><p className="text-xs font-semibold">{c.label}</p><p className="mt-2 text-3xl font-semibold">{c.value}</p></div>
+        ))}
+      </div>
+
+      <h2 className="mt-12 font-serif text-2xl font-semibold text-[#304039]">Topics that need attention</h2>
+      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+        {weak.length ? weak.map((s) => <WeaknessCard key={s.topic.id} stat={s} rec={recFor(s.topic.id)} onNavigate={onNavigate} />) : <p className="rounded-2xl border border-[#e5eae5] bg-white p-6 text-sm text-[#78877e]">Nothing is flagged right now. Keep practising to build stronger evidence.</p>}
+      </div>
+
+      <div className="mt-12 grid gap-5 lg:grid-cols-2">
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-[#304039]">Uncertain mastery</h2>
+          <p className="mt-1 text-xs text-[#87928a]">Mixed or limited evidence. A quick check will tell us more.</p>
+          <ul className="mt-5 space-y-3">
+            {uncertain.map((s) => (
+              <li key={s.topic.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#e5eae5] bg-white p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#34433b]">{s.topic.short}</p>
+                  <p className="mt-1 text-[11px] text-[#87928a]">{s.attempts ? `${s.correct}/${s.attempts} correct · ${pct(s.estimate)} estimate` : 'No answers yet'}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2"><EvidenceBadge level={s.evidence} /><TrendIcon trend={s.trend} /></div>
+                </div>
+                <button onClick={() => onNavigate('Practice', s.topic.id)} className="rounded-xl border border-[#d6e6f1] px-3 py-2 text-xs font-semibold text-[#247eb7]">Quick check</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h2 className="font-serif text-2xl font-semibold text-[#304039]">Demonstrated strengths</h2>
+          <p className="mt-1 text-xs text-[#87928a]">At least 4 answers with a 70%+ estimate.</p>
+          <ul className="mt-5 space-y-3">
+            {strengths.length ? strengths.map((s) => (
+              <li key={s.topic.id} className="flex items-center gap-3 rounded-2xl border border-[#d9ebe0] bg-[#f6fbf8] p-4">
+                <CircleCheck size={20} className="shrink-0 text-[#4e9a72]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#2e5e47]">{s.topic.short}</p>
+                  <p className="mt-1 text-[11px] text-[#5d8a72]">{s.correct}/{s.attempts} correct · {pct(s.estimate)} · {dependentsOf(s.topic.id).length ? `supports ${dependentsOf(s.topic.id).map((d) => d.short).join(', ')}` : s.topic.subject}</p>
+                </div>
+                <EvidenceBadge level={s.evidence} />
+              </li>
+            )) : <li className="rounded-2xl border border-[#e5eae5] bg-white p-4 text-xs text-[#78877e]">Strengths appear once a topic has at least 4 answers.</li>}
+          </ul>
+
+          <h2 className="mt-10 font-serif text-2xl font-semibold text-[#304039]">Related prerequisite gaps</h2>
+          <ul className="mt-5 space-y-3">
+            {prereqGaps.map(({ prereq, dependent }) => (
+              <li key={`${prereq.topic.id}-${dependent.topic.id}`} className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#e5eae5] bg-white p-4 text-xs">
+                <span className="rounded-lg bg-[#f7f2e9] px-2.5 py-1.5 font-semibold text-[#9a7143]">{prereq.topic.short}</span>
+                <ArrowRight size={14} className="text-[#b9c3bb]" aria-label="supports" />
+                <span className="rounded-lg bg-[#eaf5fb] px-2.5 py-1.5 font-semibold text-[#247eb7]">{dependent.topic.short}</span>
+                <span className="ml-auto text-[11px] text-[#87928a]">{prereq.attempts ? `${prereq.correct}/${prereq.attempts} on the foundation` : 'foundation not yet assessed'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div className="mt-12 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6">
+          <h2 className="font-serif text-2xl font-semibold text-[#304039]">Performance history</h2>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[480px] text-left text-xs">
+              <thead className="text-[10px] uppercase tracking-[0.14em] text-[#a0aaa3]"><tr><th className="pb-3 font-semibold">Date</th><th className="pb-3 font-semibold">Quiz</th><th className="pb-3 font-semibold">Topics</th><th className="pb-3 text-right font-semibold">Score</th></tr></thead>
+              <tbody className="divide-y divide-[#eef1ed]">
+                {history.map((r) => {
+                  const c = r.responses.filter((x) => x.correct).length
+                  return (
+                    <tr key={r.id}>
+                      <td className="py-3 text-[#78877e]">{formatDateKey(dateKeyInZone(new Date(r.takenAt), settings.timeZone))}</td>
+                      <td className="py-3 font-medium text-[#46544c]">{r.title}</td>
+                      <td className="py-3 text-[#78877e]">{[...new Set(r.responses.map((x) => topicById(x.topicId).short))].join(', ')}</td>
+                      <td className="py-3 text-right font-semibold text-[#34433b]">{c}/{r.responses.length}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="rounded-2xl bg-[#f0f6f1] p-5 md:p-6">
+          <h2 className="flex items-center gap-2 font-serif text-2xl font-semibold text-[#2e5e47]"><ListChecks size={20} /> Suggested revision actions</h2>
+          <ol className="mt-5 space-y-3">
+            {recs.slice(0, 5).map((r, i) => (
+              <li key={r.topic.id} className="flex gap-3 rounded-xl bg-white p-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#dff2e9] text-[11px] font-bold text-[#2e7655]">{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-[#34433b]">{r.action}: {r.topic.short}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-[#78877e]">{r.reason}</p>
+                  <button onClick={() => onNavigate('Practice', r.topic.id)} className="mt-2 text-[11px] font-semibold text-[#4e9a72]">Practise now</button>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+================================================================================
+FILE: components/studyverse/overview.tsx
+================================================================================
+'use client'
+
+import { ArrowRight, BrainCircuit, CircleCheck, Circle, Clock3, Flame, Lightbulb, MessageCircleQuestion, RefreshCw, Sparkles, Target } from 'lucide-react'
+import { addDays, formatDateKey, formatMinutes, weekdayIndex, WEEKDAYS } from '@/lib/studyverse/dates'
+import { pct } from '@/lib/studyverse/engine'
+import { useStudyVerse } from './store'
+import { EvidenceBadge, ProgressBar, statusBar, type Navigate } from './ui'
+
+const actionTone = {
+  'Strengthen foundation': 'bg-[#fff0e1] text-[#c6814f]',
+  'Targeted practice': 'bg-[#eee9f9] text-[#8879b6]',
+  'Gather more evidence': 'bg-[#eaf5fb] text-[#247eb7]',
+  Refresh: 'bg-[#e5f2eb] text-[#5c9f7a]',
+} as const
+
+export function Overview({ onNavigate }: { onNavigate: Navigate }) {
+  const { recs, stats, streak, plan, today, settings, lastChange, isTaskDone, toggleTask } = useStudyVerse()
+  const assessed = [...stats.values()].filter((s) => s.attempts > 0)
+  const avgMastery = assessed.reduce((sum, s) => sum + s.estimate, 0) / Math.max(1, assessed.length)
+  const strengths = assessed.filter((s) => s.status === 'strength').length
+  const last7 = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6))
+  const weekMinutes = last7.reduce((sum, d) => sum + (streak.totals.get(d)?.minutes ?? 0), 0)
+  const weekGoal = settings.dailyMinutes * settings.studyDays.length
+  const todayPlan = plan[0]
+  const maxBar = Math.max(settings.dailyMinutes, ...last7.map((d) => streak.totals.get(d)?.minutes ?? 0))
+
+  return (
+    <>
+      <section className="grid items-end gap-8 md:grid-cols-[1fr_auto]">
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#61a981]">Good to see you, Aarav</p>
+          <h1 className="font-serif text-[38px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#26372f] md:text-[50px]">Let&apos;s make today<br className="hidden md:block" /> a <span className="text-[#247eb7]">great learning day.</span></h1>
+          <p className="mt-5 max-w-[520px] text-sm leading-7 text-[#7d8981]">Recommendations below update after every quiz, using your real answers. Not page visits.</p>
+        </div>
+        <button onClick={() => onNavigate('Achievements')} className="flex items-center gap-3 rounded-2xl border border-[#e6ebe5] bg-white px-4 py-3 text-left hover:shadow-md">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#fff0d8] text-[#cc8a3b]"><Flame size={19} fill="currentColor" /></span>
+          <span>
+            <span className="block text-xs font-semibold text-[#47564d]">{streak.current} day streak</span>
+            <span className="mt-0.5 block text-[11px] text-[#99a39d]">{streak.todayMet ? 'Today’s goal complete' : `${Math.max(0, streak.todayGoal - streak.todayMinutes)} min to today’s goal`}</span>
+          </span>
+        </button>
+      </section>
+
+      {lastChange && (
+        <section className="mt-8 flex flex-wrap items-start gap-3 rounded-2xl border border-[#cfe3f1] bg-[#eef6fc] p-5" aria-live="polite">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#247eb7]"><RefreshCw size={17} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-[#174a7e]">Recommendations updated after &ldquo;{lastChange.title}&rdquo; ({lastChange.correct}/{lastChange.total})</p>
+            <p className="mt-1 text-xs leading-5 text-[#4f6f8c]">{lastChange.message}</p>
+          </div>
+          <button onClick={() => onNavigate('Learning Gaps')} className="rounded-xl border border-[#cfe3f1] bg-white px-3 py-2 text-xs font-semibold text-[#247eb7]">See evidence</button>
+        </section>
+      )}
+
+      <section className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl bg-[#dff2e9] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#4c8d6b]">Average mastery estimate</span><Target size={17} className="text-[#69ae88]" /></div>
+          <div className="mt-5 flex items-end gap-2"><span className="text-3xl font-semibold text-[#2e7655]">{pct(avgMastery)}</span><span className="mb-1 text-[11px] text-[#4c8d6b]">across {assessed.length} topics</span></div>
+          <div className="mt-4"><ProgressBar value={avgMastery * 100} trackClassName="bg-[#c4e5d1]" label="Average mastery" /></div>
+        </div>
+        <div className="rounded-2xl bg-[#eee9f9] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#7769a1]">Demonstrated strengths</span><BrainCircuit size={17} className="text-[#978ac2]" /></div>
+          <div className="mt-5 flex items-end gap-2"><span className="text-3xl font-semibold text-[#62548e]">{strengths}</span><span className="mb-1 text-[11px] text-[#7769a1]">of {stats.size} topics, 4+ answers each</span></div>
+          <div className="mt-4 flex gap-1.5">{[...stats.values()].map((s) => <span key={s.topic.id} className={`h-2 flex-1 rounded-full ${s.status === 'strength' ? 'bg-[#9d8cca]' : 'bg-[#d9d2eb]'}`} />)}</div>
+        </div>
+        <div className="rounded-2xl bg-[#fff0e1] p-5">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-[#ae7444]">Last 7 days</span><Clock3 size={17} className="text-[#d69868]" /></div>
+          <div className="mt-5 flex items-end gap-2"><span className="text-3xl font-semibold text-[#9b663c]">{formatMinutes(weekMinutes)}</span><span className="mb-1 text-[11px] text-[#ae7444]">of {formatMinutes(weekGoal)} goal</span></div>
+          <div className="mt-4"><ProgressBar value={(weekMinutes / Math.max(1, weekGoal)) * 100} barClassName="bg-[#e09b69]" trackClassName="bg-[#f4d9bf]" label="Weekly study time" /></div>
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#65a984]"><Sparkles size={14} /> Personalized from your quiz evidence</p>
+            <h2 className="mt-2 font-serif text-2xl font-semibold text-[#2e3e35]">What should you study next?</h2>
+          </div>
+          <button onClick={() => onNavigate('Study Planner')} className="hidden items-center gap-2 text-xs font-semibold text-[#4e9a72] sm:flex">View full plan <ArrowRight size={15} /></button>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {recs.slice(0, 3).map((rec, i) => {
+            const s = stats.get(rec.topic.id)
+            return (
+              <article key={rec.topic.id} className="group flex flex-col rounded-2xl border border-[#e5eae5] bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
+                <div className="flex items-start justify-between gap-2">
+                  <span className={`rounded-lg px-2.5 py-1 text-[10px] font-semibold ${actionTone[rec.action]}`}>{i === 0 ? 'Top priority · ' : ''}{rec.action}</span>
+                  {s && <EvidenceBadge level={s.evidence} />}
+                </div>
+                <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#a2aba5]">{rec.topic.subject} · {rec.topic.level}</p>
+                <h3 className="mt-2 font-serif text-xl font-semibold leading-tight text-[#34433b]">{rec.topic.name}</h3>
+                <div className="mt-4 flex flex-1 gap-2 rounded-xl bg-[#fafbf9] p-3"><Lightbulb size={15} className="mt-0.5 shrink-0 text-[#d79b4a]" /><p className="text-[11px] leading-5 text-[#6f7c74]">{rec.reason}</p></div>
+                <button onClick={() => onNavigate('Practice', rec.topic.id)} className="mt-5 flex w-full items-center justify-between rounded-xl bg-[#f0f7f2] px-3 py-2.5 text-xs font-semibold text-[#418762] transition group-hover:bg-[#dff2e9]">Practise this topic<ArrowRight size={15} /></button>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="mt-12 grid gap-5 lg:grid-cols-[1.25fr_0.75fr]">
+        <div className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a0aaa3]">Mastery by topic</p>
+              <h2 className="mt-2 font-serif text-2xl font-semibold text-[#304039]">Where you stand</h2>
+            </div>
+            <button onClick={() => onNavigate('Learning Gaps')} className="text-xs font-semibold text-[#59a57a]">See evidence</button>
+          </div>
+          <ul className="mt-6 space-y-3.5">
+            {[...stats.values()].sort((a, b) => a.estimate - b.estimate).map((s) => (
+              <li key={s.topic.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-xs sm:grid-cols-[minmax(0,12rem)_1fr_auto]">
+                <span className="truncate font-medium text-[#46544c]">{s.topic.short}</span>
+                <ProgressBar value={s.attempts ? s.estimate * 100 : 0} barClassName={statusBar(s.status)} label={`${s.topic.short} mastery`} />
+                <span className="w-24 text-right text-[11px] text-[#89958d]">{s.attempts ? `${pct(s.estimate)} · ${s.attempts} ans` : 'Not assessed'}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-[11px] leading-5 text-[#a0aaa3]">Estimates are smoothed: (correct + 1) ÷ (answers + 2). With fewer than 4 answers, treat them as preliminary.</p>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div className="rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a0aaa3]">Today&apos;s plan</p>
+                <h2 className="mt-2 font-serif text-xl font-semibold text-[#304039]">{todayPlan?.focus?.short ?? 'Rest day'}</h2>
+              </div>
+              <span className="text-[11px] text-[#89958d]">{streak.todayMinutes}/{streak.todayGoal} min</span>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {todayPlan?.tasks.map((task) => {
+                const done = isTaskDone(task.id)
+                return (
+                  <li key={task.id}>
+                    <button onClick={() => toggleTask(task)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left text-xs hover:bg-[#f7faf7]" aria-pressed={done}>
+                      {done ? <CircleCheck size={18} className="shrink-0 text-[#4e9a72]" /> : <Circle size={18} className="shrink-0 text-[#c3ccc6]" />}
+                      <span className={`flex-1 ${done ? 'text-[#a0aaa3] line-through' : 'text-[#46544c]'}`}>{task.title}</span>
+                      <span className="text-[#a0aaa3]">{task.minutes}m</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            <div className="mt-5">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a0aaa3]">Minutes, last 7 days</p>
+              <div className="flex h-20 items-end gap-1.5" role="img" aria-label="Study minutes over the last 7 days">
+                {last7.map((d) => {
+                  const m = streak.totals.get(d)?.minutes ?? 0
+                  return (
+                    <div key={d} className="flex flex-1 flex-col items-center gap-1">
+                      <div className={`w-full rounded-md ${streak.met(d) ? 'bg-[#64bd91]' : m ? 'bg-[#bfe0cc]' : 'bg-[#eef1ee]'}`} style={{ height: `${Math.max(6, (m / maxBar) * 64)}px` }} title={`${formatDateKey(d)}: ${m} min`} />
+                      <span className={`text-[9px] ${d === today ? 'font-bold text-[#2e7655]' : 'text-[#a0aaa3]'}`}>{WEEKDAYS[weekdayIndex(d)].slice(0, 1)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-[#174a7e] p-6 text-[#eef8f0]">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/15"><MessageCircleQuestion size={20} /></span>
+            <h2 className="mt-5 font-serif text-xl font-semibold leading-tight">Stuck on something? Ask your tutor.</h2>
+            <button onClick={() => onNavigate('Ask a Doubt')} className="mt-5 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-[#174a7e]">Ask a doubt <ArrowRight size={14} /></button>
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+================================================================================
+FILE: components/studyverse/practice-quiz.tsx
+================================================================================
+'use client'
+
+import { useState } from 'react'
+import { ArrowRight, Check, CircleCheck, RefreshCw, X } from 'lucide-react'
+import { questionsForTopic, topicById, topics, wrongOptionIndex } from '@/lib/studyverse/content'
+import { pct } from '@/lib/studyverse/engine'
+import type { ChangeSummary, Confidence, QuizResponse } from '@/lib/studyverse/types'
+import { useStudyVerse } from './store'
+import { DemoBadge, EvidenceBadge, PageIntro, statusLabel, type Navigate } from './ui'
+
+type Answer = { choice: number; reasoning: string; confidence: Confidence }
+
+function toResponses(topicId: string, answers: Answer[]): QuizResponse[] {
+  return questionsForTopic(topicId).map((q, i) => {
+    const a = answers[i]
+    const correct = a.choice === q.answer
+    let reasoningNote: string | undefined
+    if (!correct && a.confidence === 'High') reasoningNote = 'Answered confidently but incorrectly, so this is worth reviewing'
+    else if (!correct && a.reasoning.trim().length < 15) reasoningNote = `Brief explanation on "${q.concept}", so the reasoning was unclear`
+    return { questionId: q.id, topicId, choice: a.choice, correct, misconception: correct ? undefined : q.traps[a.choice], reasoningNote, confidence: a.confidence }
+  })
+}
+
+function ChangePanel({ summary, onNavigate }: { summary: ChangeSummary; onNavigate: Navigate }) {
+  const steps: { title: string; detail: React.ReactNode }[] = [
+    { title: 'Saved result', detail: `${summary.title}: ${summary.correct}/${summary.total} correct.` },
+    { title: 'Updated topic-level performance', detail: summary.masteryChanges.map((m) => `${m.name}: now ${m.attempts} answers`).join(' · ') },
+    {
+      title: 'Re-evaluated mastery confidence',
+      detail: (
+        <ul className="space-y-1">
+          {summary.masteryChanges.map((m) => (
+            <li key={m.topicId} className="flex flex-wrap items-center gap-2">
+              <span>{m.name}: {pct(m.before)} → <strong className={m.after >= m.before ? 'text-[#2e7655]' : 'text-[#9b663c]'}>{pct(m.after)}</strong> ({statusLabel(m.beforeStatus)} → {statusLabel(m.afterStatus)})</span>
+              <EvidenceBadge level={m.evidence} />
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+    { title: 'Identified newly observed weaknesses', detail: summary.newWeaknesses.length ? `${summary.newWeaknesses.join('; ')}. Seen once so far, so we'll look for it again before treating it as a pattern.` : 'No new error patterns observed.' },
+    { title: 'Re-checked relevant prerequisites', detail: summary.prerequisiteNotes.join(' ') },
+    { title: 'Updated recommended topics', detail: `Now: ${summary.nextTopics.join(', ') || 'none'}.${summary.added.length ? ` Added ${summary.added.join(', ')}.` : ''}${summary.removed.length ? ` No longer top 3: ${summary.removed.join(', ')}.` : ''}` },
+    { title: 'Recalculated study-plan priorities', detail: 'Today’s and this week’s tasks were rebuilt from the new priorities.' },
+    { title: 'Updated dashboard charts and progress', detail: 'Mastery bars, strengths and minutes on the Overview now include this quiz.' },
+  ]
+  return (
+    <div className="rounded-2xl border border-[#cfe3f1] bg-white p-5 md:p-6" aria-live="polite">
+      <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#247eb7]"><RefreshCw size={14} /> What changed</p>
+      <p className="mt-3 rounded-xl bg-[#eef6fc] p-4 text-sm leading-6 text-[#174a7e]">{summary.message}</p>
+      <ol className="mt-5 space-y-3">
+        {steps.map((s) => (
+          <li key={s.title} className="flex gap-3 text-xs">
+            <CircleCheck size={16} className="mt-0.5 shrink-0 text-[#4e9a72]" />
+            <div className="min-w-0 leading-5 text-[#6f7c74]"><p className="font-semibold text-[#34433b]">{s.title}</p><div className="mt-0.5">{s.detail}</div></div>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button onClick={() => onNavigate('Overview')} className="rounded-xl bg-[#174a7e] px-4 py-2.5 text-xs font-semibold text-white">View dashboard</button>
+        <button onClick={() => onNavigate('Study Planner')} className="rounded-xl border border-[#e2e8e2] px-4 py-2.5 text-xs font-semibold text-[#65756b]">See updated plan</button>
+        <button onClick={() => onNavigate('Learning Gaps')} className="rounded-xl border border-[#e2e8e2] px-4 py-2.5 text-xs font-semibold text-[#65756b]">Open learning gaps</button>
+      </div>
+    </div>
+  )
+}
+
+export function PracticeQuiz({ onNavigate }: { onNavigate: Navigate }) {
+  const { practiceTopicId, recs, stats, submitQuiz } = useStudyVerse()
+  const [topicId, setTopicId] = useState(practiceTopicId ?? recs[0]?.topic.id ?? topics[0].id)
+  const [phase, setPhase] = useState<'setup' | 'quiz' | 'results'>('setup')
+  const [index, setIndex] = useState(0)
+  const [answers, setAnswers] = useState<Answer[]>([])
+  const [selected, setSelected] = useState<number | null>(null)
+  const [checked, setChecked] = useState(false)
+  const [reasoning, setReasoning] = useState('')
+  const [confidence, setConfidence] = useState<Confidence>('Medium')
+  const [summary, setSummary] = useState<ChangeSummary | null>(null)
+
+  const topic = topicById(topicId)
+  const questions = questionsForTopic(topicId)
+  const question = questions[index]
+  const stat = stats.get(topicId)
+
+  const finish = (final: Answer[]) => {
+    setAnswers(final)
+    setSummary(submitQuiz(`${topic.short} practice`, toResponses(topicId, final)))
+    setPhase('results')
+  }
+  const start = () => { setPhase('quiz'); setIndex(0); setAnswers([]); setSelected(null); setChecked(false); setReasoning(''); setConfidence('Medium'); setSummary(null) }
+  const next = () => {
+    if (selected === null) return
+    const final = [...answers, { choice: selected, reasoning, confidence }]
+    if (index === questions.length - 1) return finish(final)
+    setAnswers(final); setIndex(index + 1); setSelected(null); setChecked(false); setReasoning(''); setConfidence('Medium')
+  }
+  const demoFill = (mode: 'strong' | 'mixed') => finish(questions.map((q, i) => ({ choice: mode === 'strong' || i === 0 ? q.answer : wrongOptionIndex(q, 0), reasoning: mode === 'strong' ? 'Worked through each step carefully' : '', confidence: 'Medium' })))
+
+  if (phase === 'setup') {
+    return (
+      <section>
+        <PageIntro eyebrow="Practice" title="Practice with purpose" description="Each quiz updates your mastery estimates, recommendations and study plan straight away, and tells you why anything changed." badge={<DemoBadge>Deterministic demo engine</DemoBadge>} />
+        <div className="mt-8 rounded-2xl border border-[#e5eae5] bg-white p-5 md:p-7">
+          <h2 className="text-sm font-semibold text-[#34433b]">Choose a topic</h2>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {topics.map((t) => {
+              const s = stats.get(t.id)
+              const recIndex = recs.findIndex((r) => r.topic.id === t.id)
+              return (
+                <button key={t.id} onClick={() => setTopicId(t.id)} aria-pressed={topicId === t.id} className={`rounded-xl border p-3 text-left transition ${topicId === t.id ? 'border-[#247eb7] bg-[#eaf5fb]' : 'border-[#e1e9ef] hover:border-[#a9c9dd]'}`}>
+                  <p className="text-xs font-semibold text-[#34433b]">{t.short}</p>
+                  <p className="mt-1 text-[11px] text-[#87928a]">{s?.attempts ? `${pct(s.estimate)} · ${s.attempts} answers` : 'Not assessed'}{recIndex > -1 && recIndex < 3 ? ` · #${recIndex + 1} priority` : ''}</p>
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl bg-[#fafbf9] p-4">
+            <div className="min-w-0 flex-1">
+              <p className="font-serif text-xl font-semibold text-[#34433b]">{topic.name}</p>
+              <p className="mt-1 text-xs text-[#87928a]">{questions.length} questions · about {questions.length * 2} minutes · counts toward today&apos;s goal</p>
+            </div>
+            {stat && <EvidenceBadge level={stat.evidence} />}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button onClick={start} className="flex items-center gap-2 rounded-xl bg-[#174a7e] px-5 py-3 text-sm font-semibold text-white">Start quiz <ArrowRight size={16} /></button>
+          </div>
+          <div className="mt-6 border-t border-[#eef1ed] pt-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#a0aaa3]">Demo shortcuts</p>
+            <p className="mt-1 text-xs text-[#87928a]">Submit an instant result to see the engine respond to changed scores.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={() => demoFill('strong')} className="rounded-xl border border-[#cfe6d8] bg-[#f3faf6] px-3 py-2 text-xs font-semibold text-[#2e7655]">Simulate a strong result</button>
+              <button onClick={() => demoFill('mixed')} className="rounded-xl border border-[#f0dcc6] bg-[#fffaf4] px-3 py-2 text-xs font-semibold text-[#9b663c]">Simulate a result with mistakes</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (phase === 'results' && summary) {
+    return (
+      <section>
+        <PageIntro eyebrow="Practice · Results" title={`${summary.correct} of ${summary.total} correct`} description={`${topic.name}. Your result is saved and everything below has been recalculated.`} />
+        <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <ul className="space-y-3">
+            {questions.map((q, i) => {
+              const a = answers[i]
+              const correct = a?.choice === q.answer
+              return (
+                <li key={q.id} className="rounded-2xl border border-[#e5eae5] bg-white p-4">
+                  <div className="flex items-start gap-3">
+                    <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${correct ? 'bg-[#e8f5ee] text-[#2e7655]' : 'bg-[#fff0e1] text-[#9b663c]'}`}>{correct ? <Check size={13} /> : <X size={13} />}</span>
+                    <div className="min-w-0 text-xs leading-5">
+                      <p className="font-semibold text-[#34433b]">{q.prompt}</p>
+                      {!correct && a && <p className="mt-1 text-[#9b663c]">You chose {q.options[a.choice]}. {q.traps[a.choice]}.</p>}
+                      <p className="mt-1 text-[#78877e]">{q.explain}</p>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+            <li><button onClick={() => setPhase('setup')} className="rounded-xl border border-[#e2e8e2] bg-white px-4 py-2.5 text-xs font-semibold text-[#65756b]">Take another quiz</button></li>
+          </ul>
+          <ChangePanel summary={summary} onNavigate={onNavigate} />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mx-auto max-w-3xl">
+      <div className="flex items-center justify-between text-xs font-semibold text-[#829087]"><span>Question {index + 1} of {questions.length}</span><span>{topic.short}</span></div>
+      <div className="mt-3 h-2 rounded-full bg-[#dce8ef]"><div className="h-full rounded-full bg-[#247eb7] transition-all" style={{ width: `${((index + 1) / questions.length) * 100}%` }} /></div>
+      <div className="mt-8 rounded-3xl border border-[#e1e9ef] bg-white p-6 shadow-sm md:p-10">
+        <span className="rounded-full bg-[#f0f6f1] px-3 py-1 text-[11px] font-semibold text-[#4e9a72]">{question.concept}</span>
+        <h1 className="mt-5 font-serif text-3xl font-semibold leading-tight text-[#243b52]">{question.prompt}</h1>
+        <div className="mt-7 grid gap-3" role="radiogroup" aria-label="Answer options">
+          {question.options.map((option, i) => {
+            const isAnswer = checked && i === question.answer
+            const isWrongPick = checked && selected === i && i !== question.answer
+            return (
+              <button key={option} role="radio" aria-checked={selected === i} disabled={checked} onClick={() => setSelected(i)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left text-sm transition ${isAnswer ? 'border-[#63ad86] bg-[#eef8f1] text-[#2e7655]' : isWrongPick ? 'border-[#e3b58e] bg-[#fff6ee] text-[#9b663c]' : selected === i ? 'border-[#247eb7] bg-[#eaf5fb] text-[#174a7e]' : 'border-[#e1e9ef] text-[#5f6f7f] hover:border-[#a9c9dd]'}`}>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#f1f5f8] text-xs font-semibold">{String.fromCharCode(65 + i)}</span>{option}
+              </button>
+            )
+          })}
+        </div>
+        <label className="mt-6 block text-xs font-semibold text-[#46544c]">
+          How did you work it out? <span className="font-normal text-[#a0aaa3]">(optional, helps us understand your reasoning)</span>
+          <textarea value={reasoning} onChange={(e) => setReasoning(e.target.value.slice(0, 400))} disabled={checked} rows={2} className="mt-2 w-full rounded-xl border border-[#e1e9ef] p-3 text-sm font-normal text-[#34433b]" />
+        </label>
+        <fieldset className="mt-4">
+          <legend className="text-xs font-semibold text-[#46544c]">How confident are you?</legend>
+          <div className="mt-2 flex gap-2">{(['Low', 'Medium', 'High'] as Confidence[]).map((c) => <button key={c} disabled={checked} aria-pressed={confidence === c} onClick={() => setConfidence(c)} className={`rounded-xl border px-3 py-1.5 text-xs font-semibold ${confidence === c ? 'border-[#63ad86] bg-[#eef8f1] text-[#2e7655]' : 'border-[#e1e9ef] text-[#718096]'}`}>{c}</button>)}</div>
+        </fieldset>
+        {checked && <p className={`mt-5 rounded-xl p-4 text-xs leading-5 ${selected === question.answer ? 'bg-[#eef8f1] text-[#2e7655]' : 'bg-[#fff6ee] text-[#8a5a32]'}`}>{selected === question.answer ? 'Correct. ' : `Not quite: ${question.traps[selected ?? 0]?.toLowerCase()}. `}{question.explain}</p>}
+        <div className="mt-6 flex justify-end gap-3">
+          {!checked ? (
+            <button onClick={() => setChecked(true)} disabled={selected === null} className="rounded-xl bg-[#174a7e] px-5 py-3 text-sm font-semibold text-white disabled:opacity-40">Check answer</button>
+          ) : (
+            <button onClick={next} className="flex items-center gap-2 rounded-xl bg-[#174a7e] px-5 py-3 text-sm font-semibold text-white">{index === questions.length - 1 ? 'Finish and update my plan' : 'Next question'} <ArrowRight size={16} /></button>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+================================================================================
+FILE: components/studyverse/shell-widgets.tsx
+================================================================================
+'use client'
+
+import { Flame } from 'lucide-react'
+import { addDays, formatDateKey } from '@/lib/studyverse/dates'
+import { useStudyVerse } from './store'
+
+export function SidebarStreak({ onOpen }: { onOpen: () => void }) {
+  const { streak, today } = useStudyVerse()
+  const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6))
+  return (
+    <button onClick={onOpen} className="mt-auto rounded-2xl bg-[#f0f6f1] p-4 text-left">
+      <span className="mb-3 flex items-center gap-2 text-[#3c815f]"><Flame size={16} fill="currentColor" /><span className="text-xs font-semibold">{streak.current} day streak</span></span>
+      <span className="block text-[11px] leading-relaxed text-[#829087]">{streak.todayMet ? 'Today’s goal is done.' : `${Math.max(0, streak.todayGoal - streak.todayMinutes)} min left for today’s goal.`}</span>
+      <span className="mt-3 flex gap-1.5">{week.map((d) => <span key={d} className={`h-1.5 flex-1 rounded-full ${streak.met(d) ? 'bg-[#64bd91]' : 'bg-[#d7e5da]'}`} />)}</span>
+    </button>
+  )
+}
+
+export function HeaderDate() {
+  const { today } = useStudyVerse()
+  return <span>{formatDateKey(today, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+}
+
+================================================================================
+FILE: components/studyverse/store.tsx
+================================================================================
+'use client'
+
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { computeStats, explainChange, recommend, type StatsMap } from '@/lib/studyverse/engine'
+import { buildPlan } from '@/lib/studyverse/plan'
+import { computeStreak, type EarnedReward, type StreakInfo } from '@/lib/studyverse/streak'
+import { createSeed } from '@/lib/studyverse/seed'
+import { dateKeyInZone, DEFAULT_TIME_ZONE } from '@/lib/studyverse/dates'
+import type { Activity, ChangeSummary, PlanDay, PlannerSettings, PlanTask, QuizRecord, QuizResponse, Recommendation, UploadItem } from '@/lib/studyverse/types'
+
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+export const MAX_UPLOADS = 10
+
+type State = {
+  records: QuizRecord[]
+  activities: Activity[]
+  settings: PlannerSettings
+  rescheduled: Record<string, string>
+  uploads: UploadItem[]
+  lastChange: ChangeSummary | null
+  practiceTopicId: string | null
+}
+
+type Store = State & {
+  today: string
+  stats: StatsMap
+  recs: Recommendation[]
+  streak: StreakInfo
+  plan: PlanDay[]
+  celebration: EarnedReward | null
+  dismissCelebration: () => void
+  submitQuiz: (title: string, responses: QuizResponse[]) => ChangeSummary
+  toggleTask: (task: PlanTask) => void
+  isTaskDone: (taskId: string) => boolean
+  rescheduleTask: (taskId: string, toDate: string) => void
+  updateSettings: (patch: Partial<PlannerSettings>) => void
+  setPracticeTopic: (topicId: string | null) => void
+  addUploads: (files: File[]) => Promise<void>
+  removeUpload: (id: string) => void
+}
+
+const StoreContext = createContext<Store | null>(null)
+
+const defaultSettings: PlannerSettings = {
+  dailyMinutes: 30,
+  studyDays: [1, 2, 3, 4, 5, 6],
+  preferredTime: 'Evening',
+  weakSubjects: ['Mathematics'],
+  goalSubjects: [],
+  goalNote: 'Feel confident in Class 8 Mathematics before the half-yearly exam',
+  timeZone: DEFAULT_TIME_ZONE,
+}
+
+async function validatePdf(file: File, existing: UploadItem[]): Promise<string | null> {
+  if (!/\.pdf$/i.test(file.name)) return 'Only PDF files are supported.'
+  if (file.type && file.type !== 'application/pdf') return 'This file does not look like a PDF.'
+  if (file.size === 0) return 'This file is empty.'
+  if (file.size > MAX_UPLOAD_BYTES) return 'Files must be 10 MB or smaller.'
+  if (existing.some((u) => u.name === file.name && u.size === file.size && u.status !== 'error')) return 'This file has already been added.'
+  const header = new Uint8Array(await file.slice(0, 5).arrayBuffer())
+  if (String.fromCharCode(...header) !== '%PDF-') return 'The file contents are not a valid PDF.'
+  return null
+}
+
+export function StudyVerseProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<State>(() => {
+    const seed = createSeed(dateKeyInZone(new Date(), DEFAULT_TIME_ZONE))
+    return { ...seed, settings: defaultSettings, rescheduled: {}, uploads: [], lastChange: null, practiceTopicId: null }
+  })
+  const [celebration, setCelebration] = useState<EarnedReward | null>(null)
+
+  const { settings } = state
+  const today = dateKeyInZone(new Date(), settings.timeZone)
+  const stats = useMemo(() => computeStats(state.records), [state.records])
+  const recs = useMemo(() => recommend(stats, settings), [stats, settings])
+  const streak = useMemo(() => computeStreak(state.activities, settings.timeZone, today, settings.dailyMinutes), [state.activities, settings.timeZone, settings.dailyMinutes, today])
+  const plan = useMemo(() => buildPlan({ today, settings, recs, stats, rescheduled: state.rescheduled }), [today, settings, recs, stats, state.rescheduled])
+
+  const celebrateNewRewards = useCallback((nextActivities: Activity[]) => {
+    const before = new Set(streak.rewards.map((r) => r.milestone.id))
+    const after = computeStreak(nextActivities, settings.timeZone, today, settings.dailyMinutes).rewards
+    const fresh = after.find((r) => !before.has(r.milestone.id))
+    if (fresh) setCelebration(fresh)
+  }, [streak.rewards, settings.timeZone, settings.dailyMinutes, today])
+
+  const submitQuiz = useCallback((title: string, responses: QuizResponse[]) => {
+    const record: QuizRecord = { id: `quiz-${Date.now()}`, takenAt: new Date().toISOString(), title, responses }
+    const nextRecords = [...state.records, record]
+    const nextStats = computeStats(nextRecords)
+    const nextRecs = recommend(nextStats, settings)
+    const summary = explainChange(stats, nextStats, recs, nextRecs, record)
+    const activity: Activity = { id: `quiz:${record.id}`, at: record.takenAt, minutes: responses.length * 2, goalMinutes: settings.dailyMinutes, label: title, kind: 'quiz' }
+    const nextActivities = state.activities.some((a) => a.id === activity.id) ? state.activities : [...state.activities, activity]
+    celebrateNewRewards(nextActivities)
+    setState((prev) => ({ ...prev, records: [...prev.records, record], activities: prev.activities.some((a) => a.id === activity.id) ? prev.activities : [...prev.activities, activity], lastChange: summary }))
+    return summary
+  }, [state.records, state.activities, settings, stats, recs, celebrateNewRewards])
+
+  const isTaskDone = useCallback((taskId: string) => state.activities.some((a) => a.id === `task:${taskId}`), [state.activities])
+
+  const toggleTask = useCallback((task: PlanTask) => {
+    const activityId = `task:${task.id}`
+    const done = state.activities.some((a) => a.id === activityId)
+    if (done) {
+      setState((prev) => ({ ...prev, activities: prev.activities.filter((a) => a.id !== activityId) }))
+      return
+    }
+    const activity: Activity = { id: activityId, at: new Date().toISOString(), minutes: task.minutes, goalMinutes: settings.dailyMinutes, label: task.title, kind: 'task' }
+    celebrateNewRewards([...state.activities, activity])
+    setState((prev) => prev.activities.some((a) => a.id === activityId) ? prev : { ...prev, activities: [...prev.activities, activity] })
+  }, [state.activities, settings.dailyMinutes, celebrateNewRewards])
+
+  const rescheduleTask = useCallback((taskId: string, toDate: string) => {
+    setState((prev) => ({ ...prev, rescheduled: { ...prev.rescheduled, [taskId]: toDate } }))
+  }, [])
+
+  const updateSettings = useCallback((patch: Partial<PlannerSettings>) => {
+    setState((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }))
+  }, [])
+
+  const setPracticeTopic = useCallback((topicId: string | null) => {
+    setState((prev) => ({ ...prev, practiceTopicId: topicId }))
+  }, [])
+
+  const patchUpload = useCallback((id: string, patch: Partial<UploadItem>) => {
+    setState((prev) => ({ ...prev, uploads: prev.uploads.map((u) => (u.id === id ? { ...u, ...patch } : u)) }))
+  }, [])
+
+  const addUploads = useCallback(async (files: File[]) => {
+    const slots = Math.max(0, MAX_UPLOADS - state.uploads.filter((u) => u.status !== 'error').length)
+    const accepted: UploadItem[] = []
+    for (const [index, file] of files.entries()) {
+      const id = `upload-${Date.now()}-${index}`
+      const item: UploadItem = { id, name: file.name, size: file.size, status: 'validating', progress: 0, addedAt: new Date().toISOString() }
+      setState((prev) => ({ ...prev, uploads: [item, ...prev.uploads] }))
+      const error = index >= slots ? `You can keep up to ${MAX_UPLOADS} resources in this prototype.` : await validatePdf(file, [...state.uploads, ...accepted])
+      if (error) {
+        patchUpload(id, { status: 'error', error })
+        continue
+      }
+      accepted.push(item)
+      patchUpload(id, { status: 'uploading' })
+      let progress = 0
+      const timer = window.setInterval(() => {
+        progress = Math.min(100, progress + 9 + Math.round(Math.random() * 8))
+        patchUpload(id, progress >= 100 ? { progress: 100, status: 'received' } : { progress })
+        if (progress >= 100) window.clearInterval(timer)
+      }, 160)
+    }
+  }, [state.uploads, patchUpload])
+
+  const removeUpload = useCallback((id: string) => {
+    setState((prev) => ({ ...prev, uploads: prev.uploads.filter((u) => u.id !== id) }))
+  }, [])
+
+  const value: Store = {
+    ...state,
+    today,
+    stats,
+    recs,
+    streak,
+    plan,
+    celebration,
+    dismissCelebration: () => setCelebration(null),
+    submitQuiz,
+    toggleTask,
+    isTaskDone,
+    rescheduleTask,
+    updateSettings,
+    setPracticeTopic,
+    addUploads,
+    removeUpload,
+  }
+
+  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+}
+
+export function useStudyVerse() {
+  const ctx = useContext(StoreContext)
+  if (!ctx) throw new Error('useStudyVerse must be used inside StudyVerseProvider')
+  return ctx
+}
+
+================================================================================
+FILE: components/studyverse/study-planner.tsx
+================================================================================
+'use client'
+
+import { useState } from 'react'
+import { CalendarDays, ChevronDown, CircleCheck, Circle, Info, Play } from 'lucide-react'
+import { formatDateKey, formatMinutes, TIME_ZONES, weekdayIndex, WEEKDAYS } from '@/lib/studyverse/dates'
+import { MAX_PLANNED_MINUTES } from '@/lib/studyverse/plan'
+import type { PlanDay, PlanTask, PreferredTime } from '@/lib/studyverse/types'
+import { useStudyVerse } from './store'
+import { PageIntro, ProgressBar, type Navigate } from './ui'
+
+const PRESETS = [20, 30, 45, 60]
+const SUBJECTS = ['Mathematics', 'Science']
+const TIMES: PreferredTime[] = ['Morning', 'Afternoon', 'Evening']
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+const kindLabel = { learn: 'Revise', practice: 'Practise', review: 'Review', reassess: 'Reassess' } as const
+
+function chip(active: boolean) {
+  return `rounded-xl border px-3 py-2 text-xs font-semibold transition ${active ? 'border-[#63ad86] bg-[#eef8f1] text-[#2e7655]' : 'border-[#e1e9ef] bg-white text-[#718096] hover:border-[#c3d6cb]'}`
+}
+
+function TaskRow({ task, plan, today, onNavigate }: { task: PlanTask; plan: PlanDay[]; today: string; onNavigate: Navigate }) {
+  const { isTaskDone, toggleTask, rescheduleTask } = useStudyVerse()
+  const [open, setOpen] = useState(false)
+  const done = isTaskDone(task.id)
+  const isToday = task.date === today
+  const targets = plan.filter((d) => d.date !== task.date && d.date > today)
+  return (
+    <li className="rounded-2xl border border-[#e5eae5] bg-white p-4">
+      <div className="flex items-start gap-3">
+        <button onClick={() => toggleTask(task)} disabled={!isToday} aria-pressed={done} aria-label={done ? `Mark ${task.title} as not done` : `Mark ${task.title} as complete`} className="mt-0.5 disabled:cursor-not-allowed disabled:opacity-40">
+          {done ? <CircleCheck size={22} className="text-[#4e9a72]" /> : <Circle size={22} className="text-[#c3ccc6]" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-[#f4f6f3] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#78877e]">{kindLabel[task.kind]}</span>
+            <span className="text-[11px] text-[#a0aaa3]">{task.minutes} min</span>
+            {task.movedFrom && <span className="text-[11px] text-[#a47b3e]">Moved from {formatDateKey(task.movedFrom, { weekday: 'short' })}</span>}
+          </div>
+          <p className={`mt-1.5 text-sm font-semibold ${done ? 'text-[#a0aaa3] line-through' : 'text-[#34433b]'}`}>{task.title}</p>
+          <button onClick={() => setOpen(!open)} aria-expanded={open} className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-[#4e9a72]">Why this task? <ChevronDown size={12} className={open ? 'rotate-180' : ''} /></button>
+          {open && <p className="mt-2 rounded-lg bg-[#fafbf9] p-3 text-[11px] leading-5 text-[#6f7c74]">{task.reason}</p>}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {(task.kind === 'practice' || task.kind === 'reassess') && isToday && !done && (
+            <button onClick={() => onNavigate('Practice', task.topicId)} className="flex items-center gap-1 rounded-lg bg-[#174a7e] px-3 py-1.5 text-[11px] font-semibold text-white"><Play size={11} /> Start</button>
+          )}
+          {!done && targets.length > 0 && (
+            <label className="text-[11px] text-[#78877e]">
+              <span className="sr-only">Reschedule {task.title}</span>
+              <select value="" onChange={(e) => e.target.value && rescheduleTask(task.id, e.target.value)} className="rounded-lg border border-[#e1e9ef] bg-white px-2 py-1.5 text-[11px]">
+                <option value="">Reschedule…</option>
+                {targets.map((d) => <option key={d.date} value={d.date}>{formatDateKey(d.date, { weekday: 'short', day: 'numeric', month: 'short' })}{d.available ? '' : ' (rest day)'}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+export function StudyPlanner({ onNavigate }: { onNavigate: Navigate }) {
+  const { settings, updateSettings, plan, today, recs, streak } = useStudyVerse()
+  const [customOpen, setCustomOpen] = useState(!PRESETS.includes(settings.dailyMinutes))
+  const todayPlan = plan[0]
+  const planned = todayPlan.tasks.reduce((s, t) => s + t.minutes, 0)
+  const toggleIn = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
+
+  return (
+    <section>
+      <PageIntro eyebrow="Study Planner" title="A plan that fits your day" description="Built from your quiz evidence, prerequisite links, chosen subjects and available time. It updates whenever you finish a task or take a quiz." />
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[340px_1fr]">
+        <aside className="h-fit space-y-6 rounded-2xl border border-[#e5eae5] bg-white p-5 lg:sticky lg:top-24">
+          <fieldset>
+            <legend className="text-xs font-semibold text-[#46544c]">Daily study time</legend>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {PRESETS.map((m) => <button key={m} onClick={() => { setCustomOpen(false); updateSettings({ dailyMinutes: m }) }} className={chip(!customOpen && settings.dailyMinutes === m)}>{m === 60 ? '1 hour' : `${m} min`}</button>)}
+              <button onClick={() => setCustomOpen(true)} className={chip(customOpen)}>Custom</button>
+            </div>
+            {customOpen && (
+              <label className="mt-3 flex items-center gap-2 text-xs text-[#78877e]">
+                <input type="number" min={10} max={180} step={5} value={settings.dailyMinutes} onChange={(e) => updateSettings({ dailyMinutes: Math.min(180, Math.max(10, Number(e.target.value) || 10)) })} className="w-20 rounded-lg border border-[#e1e9ef] px-2 py-1.5 text-sm text-[#34433b]" />
+                minutes per day
+              </label>
+            )}
+            {settings.dailyMinutes > MAX_PLANNED_MINUTES && <p className="mt-2 text-[11px] leading-5 text-[#a47b3e]">We plan up to {MAX_PLANNED_MINUTES} focused minutes so the day doesn&apos;t feel overloaded. The rest is free time.</p>}
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-xs font-semibold text-[#46544c]">Study days</legend>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {DAY_ORDER.map((d) => <button key={d} aria-pressed={settings.studyDays.includes(d)} onClick={() => updateSettings({ studyDays: settings.studyDays.includes(d) ? settings.studyDays.filter((x) => x !== d) : [...settings.studyDays, d] })} className={`${chip(settings.studyDays.includes(d))} w-11 px-0`}>{WEEKDAYS[d]}</button>)}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-xs font-semibold text-[#46544c]">Preferred time</legend>
+            <div className="mt-3 flex flex-wrap gap-2">{TIMES.map((t) => <button key={t} aria-pressed={settings.preferredTime === t} onClick={() => updateSettings({ preferredTime: t })} className={chip(settings.preferredTime === t)}>{t}</button>)}</div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-xs font-semibold text-[#46544c]">Subjects that feel tricky</legend>
+            <div className="mt-3 flex flex-wrap gap-2">{SUBJECTS.map((s) => <button key={s} aria-pressed={settings.weakSubjects.includes(s)} onClick={() => updateSettings({ weakSubjects: toggleIn(settings.weakSubjects, s) })} className={chip(settings.weakSubjects.includes(s))}>{s}</button>)}</div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="text-xs font-semibold text-[#46544c]">Goal subjects</legend>
+            <div className="mt-3 flex flex-wrap gap-2">{SUBJECTS.map((s) => <button key={s} aria-pressed={settings.goalSubjects.includes(s)} onClick={() => updateSettings({ goalSubjects: toggleIn(settings.goalSubjects, s) })} className={chip(settings.goalSubjects.includes(s))}>{s}</button>)}</div>
+            <label className="mt-3 block text-[11px] text-[#78877e]">
+              My learning goal
+              <input value={settings.goalNote} onChange={(e) => updateSettings({ goalNote: e.target.value.slice(0, 120) })} className="mt-1 w-full rounded-lg border border-[#e1e9ef] px-3 py-2 text-xs text-[#34433b]" />
+            </label>
+          </fieldset>
+
+          <label className="block text-xs font-semibold text-[#46544c]">
+            Time zone
+            <select value={settings.timeZone} onChange={(e) => updateSettings({ timeZone: e.target.value })} className="mt-2 w-full rounded-lg border border-[#e1e9ef] bg-white px-3 py-2 text-xs font-normal text-[#34433b]">
+              {TIME_ZONES.map((tz) => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+            </select>
+          </label>
+        </aside>
+
+        <div className="min-w-0 space-y-8">
+          <div className="rounded-2xl bg-[#174a7e] p-5 text-white md:p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a9d8f0]">Today · {formatDateKey(today, { weekday: 'long', day: 'numeric', month: 'long' })} · {settings.preferredTime}</p>
+                <h2 className="mt-2 font-serif text-3xl font-semibold">{todayPlan.focus ? `Focus: ${todayPlan.focus.short}` : 'No priorities right now'}</h2>
+                <p className="mt-1 text-xs text-[#c6dcef]">{formatMinutes(planned)} planned · {streak.todayMinutes} of {settings.dailyMinutes} min done{streak.todayMet ? ' · goal met' : ''}</p>
+              </div>
+              <div className="w-full max-w-[220px]"><ProgressBar value={(streak.todayMinutes / settings.dailyMinutes) * 100} barClassName="bg-[#7fd1a6]" trackClassName="bg-white/20" label="Today's goal progress" /></div>
+            </div>
+            {!todayPlan.available && <p className="mt-4 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-[11px] leading-5 text-[#dbe9f5]"><Info size={14} className="mt-0.5 shrink-0" />Today isn&apos;t one of your study days. These tasks are optional.</p>}
+          </div>
+
+          <ul className="space-y-3">
+            {todayPlan.tasks.map((t) => <TaskRow key={t.id} task={t} plan={plan} today={today} onNavigate={onNavigate} />)}
+            {!todayPlan.tasks.length && <li className="rounded-2xl border border-[#e5eae5] bg-white p-5 text-sm text-[#78877e]">Nothing scheduled today.</li>}
+          </ul>
+
+          <div className="rounded-2xl bg-[#f0f6f1] p-5">
+            <h3 className="text-sm font-semibold text-[#2e5e47]">Why tasks are in this order</h3>
+            <ol className="mt-3 space-y-2 text-xs leading-5 text-[#5d7a6a]">
+              {recs.slice(0, 3).map((r, i) => <li key={r.topic.id}><span className="font-semibold text-[#2e5e47]">{i + 1}. {r.topic.short}</span> ({r.action.toLowerCase()}): {r.reason}</li>)}
+            </ol>
+            <p className="mt-3 text-[11px] text-[#7d998a]">Foundations come before the topics that depend on them when your answers point to a gap. Time splits are adjusted to your daily goal and are not fixed rules.</p>
+          </div>
+
+          <div>
+            <h3 className="flex items-center gap-2 font-serif text-2xl font-semibold text-[#304039]"><CalendarDays size={20} /> This week</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {plan.slice(1).map((day) => {
+                const minutes = day.tasks.reduce((s, t) => s + t.minutes, 0)
+                const heavy = minutes > settings.dailyMinutes
+                return (
+                  <div key={day.date} className={`rounded-2xl border p-4 ${day.tasks.length ? 'border-[#e5eae5] bg-white' : 'border-dashed border-[#dfe5e0] bg-transparent'}`}>
+                    <p className="text-[11px] font-semibold text-[#a0aaa3]">{WEEKDAYS[weekdayIndex(day.date)]} · {formatDateKey(day.date)}</p>
+                    {day.tasks.length ? (
+                      <>
+                        <p className="mt-2 text-sm font-semibold text-[#34433b]">{day.focus?.short ?? 'Moved tasks'}</p>
+                        <ul className="mt-2 space-y-1">{day.tasks.map((t) => <li key={t.id} className="text-[11px] leading-5 text-[#78877e]">{t.minutes}m · {kindLabel[t.kind]}{t.movedFrom ? ' (moved)' : ''}</li>)}</ul>
+                        <p className={`mt-2 text-[11px] font-semibold ${heavy ? 'text-[#ae7444]' : 'text-[#4e9a72]'}`}>{formatMinutes(minutes)}{heavy ? ' · more than your goal' : ''}</p>
+                      </>
+                    ) : <p className="mt-2 text-xs text-[#a0aaa3]">Rest day</p>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+================================================================================
+FILE: components/studyverse/ui.tsx
+================================================================================
+import { Award, Lock } from 'lucide-react'
+import type { ReactNode } from 'react'
+import type { EvidenceLevel, MasteryStatus } from '@/lib/studyverse/types'
+import type { Milestone } from '@/lib/studyverse/streak'
+
+export type NavLabel = 'Overview' | 'My Learning' | 'Learning Gaps' | 'Study Planner' | 'Practice' | 'Ask a Doubt' | 'Upload Resources' | 'Achievements'
+export type Navigate = (nav: NavLabel, practiceTopicId?: string) => void
+
+export function PageIntro({ eyebrow, title, description, badge }: { eyebrow: string; title: string; description: string; badge?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="max-w-2xl">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#6aaa89]">StudyVerse · {eyebrow}</p>
+        <h1 className="font-serif text-4xl font-semibold text-[#25332c] md:text-5xl text-balance">{title}</h1>
+        <p className="mt-4 text-sm leading-7 text-[#7d8982]">{description}</p>
+      </div>
+      {badge}
+    </div>
+  )
+}
+
+export function DemoBadge({ children = 'Demo engine' }: { children?: ReactNode }) {
+  return <span className="rounded-full bg-[#f7f2e9] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#a47b3e]">{children}</span>
+}
+
+const statusStyles: Record<MasteryStatus, { label: string; className: string; bar: string }> = {
+  weak: { label: 'Needs attention', className: 'bg-[#fff0e1] text-[#9b663c]', bar: 'bg-[#e09b69]' },
+  uncertain: { label: 'Uncertain', className: 'bg-[#eaf5fb] text-[#1f6c9e]', bar: 'bg-[#6fb3dc]' },
+  strength: { label: 'Demonstrated strength', className: 'bg-[#e8f5ee] text-[#2e7655]', bar: 'bg-[#58ad7f]' },
+  unassessed: { label: 'Not yet assessed', className: 'bg-[#f1f5f9] text-[#64748b]', bar: 'bg-[#cbd5e1]' },
+}
+
+export const statusBar = (status: MasteryStatus) => statusStyles[status].bar
+export const statusLabel = (status: MasteryStatus) => statusStyles[status].label
+
+export function StatusPill({ status }: { status: MasteryStatus }) {
+  const s = statusStyles[status]
+  return <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${s.className}`}>{s.label}</span>
+}
+
+const evidenceStyles: Record<EvidenceLevel, string> = {
+  None: 'bg-[#f1f5f9] text-[#64748b]',
+  Preliminary: 'bg-[#f7f2e9] text-[#94672f]',
+  Moderate: 'bg-[#eee9f9] text-[#62548e]',
+  Stronger: 'bg-[#e8f5ee] text-[#2e7655]',
+}
+
+export function EvidenceBadge({ level }: { level: EvidenceLevel }) {
+  return <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${evidenceStyles[level]}`}>{level === 'None' ? 'No evidence yet' : `${level} evidence`}</span>
+}
+
+export function ProgressBar({ value, barClassName = 'bg-[#58ad7f]', trackClassName = 'bg-[#edf0ed]', label }: { value: number; barClassName?: string; trackClassName?: string; label?: string }) {
+  const clamped = Math.max(0, Math.min(100, value))
+  return (
+    <div className={`h-2 overflow-hidden rounded-full ${trackClassName}`} role="progressbar" aria-valuenow={Math.round(clamped)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+      <div className={`h-full rounded-full transition-all duration-500 ${barClassName}`} style={{ width: `${clamped}%` }} />
+    </div>
+  )
+}
+
+const badgeTones: Record<Milestone['tone'], { ring: string; icon: string; text: string }> = {
+  bronze: { ring: 'bg-gradient-to-br from-[#f6dcc2] to-[#d9a273]', icon: 'text-[#7a4a22]', text: 'text-[#8a5a32]' },
+  silver: { ring: 'bg-gradient-to-br from-[#f1f4f7] to-[#b8c2cc]', icon: 'text-[#4b5866]', text: 'text-[#5b6875]' },
+  gold: { ring: 'bg-gradient-to-br from-[#fbefc4] to-[#e0b44a]', icon: 'text-[#7a5a0c]', text: 'text-[#8a6a14]' },
+}
+
+export function RewardBadge({ milestone, earned, size = 'md' }: { milestone: Milestone; earned: boolean; size?: 'md' | 'lg' }) {
+  const tone = badgeTones[milestone.tone]
+  const dims = size === 'lg' ? 'h-24 w-24' : 'h-14 w-14'
+  return (
+    <span className={`relative grid shrink-0 place-items-center rounded-full ${dims} ${earned ? tone.ring : 'bg-[#eef1f4]'} shadow-inner`} aria-hidden="true">
+      <span className={`grid place-items-center rounded-full bg-white/60 ${size === 'lg' ? 'h-16 w-16' : 'h-10 w-10'}`}>
+        {earned ? <Award size={size === 'lg' ? 34 : 20} className={tone.icon} /> : <Lock size={size === 'lg' ? 26 : 16} className="text-[#a0aab4]" />}
+      </span>
+    </span>
+  )
+}
+
+export const badgeText = (milestone: Milestone) => badgeTones[milestone.tone].text
+
+================================================================================
+FILE: components/studyverse/upload-resources.tsx
+================================================================================
+'use client'
+
+import { useRef, useState } from 'react'
+import { CircleCheck, CloudUpload, FileText, LoaderCircle, Lock, Trash2, TriangleAlert } from 'lucide-react'
+import { MAX_UPLOADS, useStudyVerse } from './store'
+import { DemoBadge, PageIntro, ProgressBar } from './ui'
+
+const PIPELINE = ['Extract text from each page', 'Keep source details (file, page, heading)', 'Split text into study-sized chunks', 'Create embeddings for each chunk', 'Index for resource-specific questions']
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function UploadResources({ onNotify }: { onNotify: (message: string) => void }) {
+  const { uploads, addUploads, removeUpload } = useStudyVerse()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [dragging, setDragging] = useState(false)
+  const received = uploads.filter((u) => u.status === 'received')
+
+  const handleFiles = async (list: FileList | null) => {
+    if (!list?.length) return
+    await addUploads([...list])
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <section>
+      <PageIntro eyebrow="Upload Resources" title="Bring your own study materials" description="Add class notes, worksheets or other PDFs you're allowed to use. Later, StudyVerse will be able to answer questions and build practice from them." badge={<DemoBadge>Prototype · backend pending</DemoBadge>} />
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-6">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
+            className={`rounded-3xl border-2 border-dashed p-8 text-center transition ${dragging ? 'border-[#247eb7] bg-[#eaf5fb]' : 'border-[#d6e2ea] bg-white'}`}
+          >
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#eaf5fb] text-[#247eb7]"><CloudUpload size={26} /></span>
+            <p className="mt-4 text-sm font-semibold text-[#34433b]">Drag PDFs here, or</p>
+            <button onClick={() => inputRef.current?.click()} className="mt-3 rounded-xl bg-[#174a7e] px-5 py-2.5 text-sm font-semibold text-white">Choose files</button>
+            <input ref={inputRef} type="file" accept="application/pdf,.pdf" multiple className="sr-only" onChange={(e) => handleFiles(e.target.files)} aria-label="Choose PDF files to upload" />
+            <p className="mt-4 text-[11px] text-[#87928a]">PDF only · up to 10 MB each · up to {MAX_UPLOADS} files · only upload materials you have permission to use</p>
+          </div>
+
+          <div>
+            <h2 className="font-serif text-2xl font-semibold text-[#304039]">Your resources</h2>
+            <ul className="mt-4 space-y-3" aria-live="polite">
+              {uploads.map((u) => (
+                <li key={u.id} className={`rounded-2xl border bg-white p-4 ${u.status === 'error' ? 'border-[#f0d2bd]' : 'border-[#e5eae5]'}`}>
+                  <div className="flex items-start gap-3">
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${u.status === 'error' ? 'bg-[#fff0e1] text-[#c6814f]' : 'bg-[#eef2f6] text-[#557086]'}`}>{u.status === 'error' ? <TriangleAlert size={18} /> : <FileText size={18} />}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[#34433b]" title={u.name}>{u.name}</p>
+                      <p className="mt-0.5 text-[11px] text-[#87928a]">{formatSize(u.size)}</p>
+                      {u.status === 'validating' && <p className="mt-2 flex items-center gap-1.5 text-[11px] text-[#557086]"><LoaderCircle size={12} className="animate-spin" /> Checking file…</p>}
+                      {u.status === 'uploading' && <div className="mt-2"><ProgressBar value={u.progress} barClassName="bg-[#247eb7]" trackClassName="bg-[#e3edf4]" label={`Uploading ${u.name}`} /><p className="mt-1 text-[11px] text-[#557086]">Simulated transfer {u.progress}%</p></div>}
+                      {u.status === 'received' && (
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                          <span className="flex items-center gap-1 rounded-full bg-[#e8f5ee] px-2 py-0.5 font-semibold text-[#2e7655]"><CircleCheck size={12} /> Validated</span>
+                          <span className="rounded-full bg-[#f7f2e9] px-2 py-0.5 font-semibold text-[#94672f]">Processing: pending backend integration</span>
+                        </div>
+                      )}
+                      {u.status === 'error' && <p className="mt-2 text-[11px] font-medium text-[#9b663c]">{u.error}</p>}
+                    </div>
+                    <button onClick={() => { removeUpload(u.id); onNotify(`${u.name} removed`) }} className="text-[#a0aaa3] hover:text-[#9b663c]" aria-label={`Remove ${u.name}`}><Trash2 size={16} /></button>
+                  </div>
+                </li>
+              ))}
+              {!uploads.length && <li className="rounded-2xl border border-dashed border-[#dfe5e0] p-5 text-xs text-[#87928a]">No resources yet. Add a PDF to get started.</li>}
+            </ul>
+          </div>
+        </div>
+
+        <aside className="h-fit space-y-5">
+          <div className="rounded-2xl border border-[#e5eae5] bg-white p-5">
+            <h2 className="text-sm font-semibold text-[#34433b]">What happens next</h2>
+            <p className="mt-1 text-[11px] leading-5 text-[#87928a]">In this prototype, files are checked in your browser and kept only for this session. They aren&apos;t sent to a server or indexed yet.</p>
+            <ol className="mt-4 space-y-2.5">
+              {PIPELINE.map((step, i) => (
+                <li key={step} className="flex items-center gap-3 text-xs text-[#78877e]">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#f1f5f9] text-[10px] font-bold text-[#94a3b8]">{i + 1}</span>
+                  <span className="flex-1">{step}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#b0a07f]">Pending</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="rounded-2xl bg-[#f7f9fb] p-5">
+            <p className="flex items-center gap-2 text-sm font-semibold text-[#64748b]"><Lock size={15} /> Ask about a resource</p>
+            <p className="mt-1 text-[11px] leading-5 text-[#87928a]">Questions and practice from your own files will open once the processing pipeline is connected.</p>
+            <label className="mt-3 block">
+              <span className="sr-only">Choose a resource</span>
+              <select disabled className="w-full rounded-lg border border-[#e1e9ef] bg-white px-3 py-2 text-xs text-[#a0aaa3]">
+                <option>{received.length ? `${received.length} resource${received.length > 1 ? 's' : ''} waiting for indexing` : 'No indexed resources'}</option>
+              </select>
+            </label>
+          </div>
+        </aside>
+      </div>
+    </section>
+  )
+}
+
+================================================================================
+FILE: components/ui/button.tsx
+================================================================================
+import { Button as ButtonPrimitive } from '@base-ui/react/button'
+import { cva, type VariantProps } from 'class-variance-authority'
+
+import { cn } from '@/lib/utils'
+
+const buttonVariants = cva(
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',
+        outline:
+          'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        ghost:
+          'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        destructive:
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default:
+          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        icon: 'size-8',
+        'icon-xs':
+          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+        'icon-sm':
+          'size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg',
+        'icon-lg': 'size-9',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  },
+)
+
+function Button({
+  className,
+  variant = 'default',
+  size = 'default',
+  ...props
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  return (
+    <ButtonPrimitive
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
+
+================================================================================
+FILE: lib/studyverse/content.ts
+================================================================================
+import type { Question, Topic } from './types'
+
+export const topics: Topic[] = [
+  { id: 'fractions', name: 'Fractions and equivalent fractions', short: 'Fractions', subject: 'Mathematics', level: 'Class 6', prerequisites: [] },
+  { id: 'integers', name: 'Operations with integers', short: 'Integers', subject: 'Mathematics', level: 'Class 7', prerequisites: [] },
+  { id: 'distributive', name: 'Distributive property', short: 'Distributive property', subject: 'Mathematics', level: 'Class 7', prerequisites: ['integers'] },
+  { id: 'comparing-quantities', name: 'Comparing Quantities', short: 'Comparing Quantities', subject: 'Mathematics', level: 'Class 8', prerequisites: ['fractions'] },
+  { id: 'algebraic-expressions', name: 'Algebraic Expressions', short: 'Algebraic Expressions', subject: 'Mathematics', level: 'Class 8', prerequisites: ['distributive', 'integers'] },
+  { id: 'linear-equations', name: 'Linear Equations in One Variable', short: 'Linear Equations', subject: 'Mathematics', level: 'Class 8', prerequisites: ['integers', 'algebraic-expressions'] },
+  { id: 'microorganisms', name: 'Microorganisms: Friend and Foe', short: 'Microorganisms', subject: 'Science', level: 'Class 8', prerequisites: [] },
+  { id: 'coal-petroleum', name: 'Coal and Petroleum', short: 'Coal and Petroleum', subject: 'Science', level: 'Class 8', prerequisites: [] },
+]
+
+export const topicById = (id: string) => topics.find((t) => t.id === id) as Topic
+
+function correctPosition(id: string) {
+  return [...id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 4
+}
+
+function q(id: string, topicId: string, concept: string, prompt: string, correct: string, wrongs: [string, string][], explain: string): Question {
+  const pos = correctPosition(id)
+  const options = wrongs.map((w) => w[0])
+  options.splice(pos, 0, correct)
+  const traps: Record<number, string> = {}
+  wrongs.forEach((w, i) => { traps[i < pos ? i : i + 1] = w[1] })
+  return { id, topicId, concept, prompt, options, answer: pos, explain, traps }
+}
+
+export function wrongOptionIndex(question: Question, wrongIndex: number) {
+  return wrongIndex < question.answer ? wrongIndex : wrongIndex + 1
+}
+
+export const questions: Question[] = [
+  q('f1', 'fractions', 'Equivalent fractions', 'Which fraction is equivalent to 3/4?', '6/8', [['4/5', 'Added the same number to top and bottom'], ['9/16', 'Squared instead of scaling'], ['12/20', 'Scaled top and bottom by different factors']], 'Multiply numerator and denominator by the same number: 3×2 / 4×2 = 6/8.'),
+  q('f2', 'fractions', 'Comparing fractions', 'Which is larger: 2/3 or 3/5?', '2/3', [['3/5', 'Compared denominators instead of values'], ['They are equal', 'Assumed similar-looking fractions are equal'], ['It cannot be decided', 'Unsure how to use a common denominator']], 'With denominator 15: 2/3 = 10/15 and 3/5 = 9/15, so 2/3 is larger.'),
+  q('f3', 'fractions', 'Simplifying', 'Simplify 18/24 fully.', '3/4', [['9/12', 'Stopped simplifying too early'], ['2/3', 'Divided top and bottom by different numbers'], ['6/8', 'Stopped simplifying too early']], 'The highest common factor of 18 and 24 is 6, so 18/24 = 3/4.'),
+  q('f4', 'fractions', 'Adding fractions', '1/2 + 1/3 = ?', '5/6', [['2/5', 'Added numerators and denominators separately'], ['2/6', 'Added numerators without a common denominator'], ['1/6', 'Multiplied instead of adding']], 'Use a common denominator: 3/6 + 2/6 = 5/6.'),
+
+  q('i1', 'integers', 'Adding integers', '(−7) + 4 = ?', '−3', [['3', 'Sign error when adding a negative'], ['−11', 'Treated addition as subtraction of sizes'], ['11', 'Ignored the negative sign']], 'Start at −7 and move 4 steps right on the number line: −3.'),
+  q('i2', 'integers', 'Multiplying integers', '(−3) × (−5) = ?', '15', [['−15', 'Sign rule for multiplying two negatives'], ['−8', 'Added instead of multiplied'], ['8', 'Added instead of multiplied']], 'A negative times a negative is positive: 3 × 5 = 15.'),
+  q('i3', 'integers', 'Subtracting integers', '6 − (−2) = ?', '8', [['4', 'Subtracting a negative'], ['−8', 'Sign error when subtracting a negative'], ['−4', 'Subtracting a negative']], 'Subtracting −2 is the same as adding 2: 6 + 2 = 8.'),
+  q('i4', 'integers', 'Dividing integers', '(−20) ÷ 4 = ?', '−5', [['5', 'Sign rule for division'], ['−16', 'Added instead of divided'], ['−80', 'Multiplied instead of divided']], 'A negative divided by a positive is negative: −5.'),
+
+  q('d1', 'distributive', 'Expanding brackets', 'Expand 3(x + 4).', '3x + 12', [['3x + 4', 'Distributive property not applied to every term'], ['x + 12', 'Multiplied only the second term'], ['3x + 7', 'Added instead of multiplied']], 'Multiply each term inside the bracket by 3: 3x + 12.'),
+  q('d2', 'distributive', 'Distributing a negative', 'Expand −2(a − 5).', '−2a + 10', [['−2a − 10', 'Sign error when distributing a negative'], ['2a − 10', 'Sign error when distributing a negative'], ['−2a − 5', 'Distributive property not applied to every term']], '−2 × a = −2a and −2 × −5 = +10.'),
+  q('d3', 'distributive', 'Mental maths with distribution', '5 × 23 is the same as…', '5 × 20 + 5 × 3', [['5 × 20 + 3', 'Distributive property not applied to every term'], ['5 + 20 × 3', 'Mixed up the order of operations'], ['50 + 3', 'Distributive property not applied to every term']], 'Split 23 into 20 + 3 and multiply each part by 5.'),
+  q('d4', 'distributive', 'Expanding brackets', 'Which is equal to 4(2y − 1)?', '8y − 4', [['8y − 1', 'Distributive property not applied to every term'], ['6y − 4', 'Added instead of multiplied'], ['8y + 4', 'Sign error when distributing a negative']], '4 × 2y = 8y and 4 × −1 = −4.'),
+
+  q('a1', 'algebraic-expressions', 'Simplifying expressions', 'Simplify 2(x + 3) + x.', '3x + 6', [['3x + 3', 'Distributive property not applied to every term'], ['2x + 6', 'Dropped a like term'], ['3x + 5', 'Added instead of multiplied']], '2(x + 3) = 2x + 6; adding x gives 3x + 6.'),
+  q('a2', 'algebraic-expressions', 'Like terms', 'Which pair are like terms?', '3xy and −5xy', [['3x and 3y', 'Matched coefficients instead of variables'], ['x² and x', 'Ignored powers when matching terms'], ['2a and 2ab', 'Matched coefficients instead of variables']], 'Like terms have exactly the same variables with the same powers.'),
+  q('a3', 'algebraic-expressions', 'Subtracting expressions', 'Subtract (2a − b) from (5a + 3b).', '3a + 4b', [['3a + 2b', 'Sign error when subtracting a bracket'], ['7a + 2b', 'Added instead of subtracted'], ['3a − 4b', 'Sign error when subtracting a bracket']], '(5a + 3b) − (2a − b) = 5a − 2a + 3b + b = 3a + 4b.'),
+  q('a4', 'algebraic-expressions', 'Substitution', 'What is 3m − 2 when m = −1?', '−5', [['1', 'Sign error when substituting a negative'], ['5', 'Sign error when substituting a negative'], ['−1', 'Substituted into only one term']], '3 × (−1) − 2 = −3 − 2 = −5.'),
+
+  q('l1', 'linear-equations', 'One-step equations', 'If x + 7 = 12, what is x?', '5', [['3', 'Arithmetic slip'], ['19', 'Added instead of undoing the addition'], ['7', 'Copied a number from the question']], 'Subtract 7 from both sides: x = 5.'),
+  q('l2', 'linear-equations', 'Two-step equations', 'Solve 3x − 4 = 11.', '5', [['7/3', 'Undid operations in the wrong order'], ['15', 'Stopped before dividing'], ['3', 'Arithmetic slip']], 'Add 4: 3x = 15. Divide by 3: x = 5.'),
+  q('l3', 'linear-equations', 'Equations with brackets', 'Solve 2(x − 1) = 8.', '5', [['4.5', 'Distributive property not applied to every term'], ['3', 'Sign error when expanding'], ['9', 'Stopped before dividing']], 'Expand: 2x − 2 = 8, so 2x = 10 and x = 5.'),
+  q('l4', 'linear-equations', 'Equations with division', 'Solve x/4 = 3.', '12', [['3/4', 'Divided instead of multiplied'], ['7', 'Added instead of multiplied'], ['−1', 'Subtracted instead of multiplied']], 'Multiply both sides by 4: x = 12.'),
+
+  q('c1', 'comparing-quantities', 'Percentage of a quantity', 'What is 25% of 80?', '20', [['25', 'Confused the percentage with the answer'], ['32', 'Fraction-to-percentage conversion'], ['55', 'Subtracted instead of finding a part']], '25% = 1/4, and 1/4 of 80 = 20.'),
+  q('c2', 'comparing-quantities', 'Fractions as percentages', 'Write 3/5 as a percentage.', '60%', [['35%', 'Fraction-to-percentage conversion'], ['53%', 'Wrote the digits side by side'], ['30%', 'Fraction-to-percentage conversion']], '3/5 = 60/100 = 60%.'),
+  q('c3', 'comparing-quantities', 'Discounts', 'A ₹500 bag has a 10% discount. What is the sale price?', '₹450', [['₹490', 'Subtracted the percentage as rupees'], ['₹50', 'Found the discount, not the sale price'], ['₹550', 'Added the discount instead']], '10% of ₹500 = ₹50, so the sale price is ₹500 − ₹50 = ₹450.'),
+  q('c4', 'comparing-quantities', 'Ratios', 'Write 12 : 18 in simplest form.', '2 : 3', [['3 : 2', 'Reversed the order of the ratio'], ['6 : 9', 'Stopped simplifying too early'], ['4 : 6', 'Stopped simplifying too early']], 'Divide both parts by 6: 2 : 3.'),
+
+  q('m1', 'microorganisms', 'Useful microorganisms', 'Which microorganism makes bread dough rise?', 'Yeast', [['Algae', 'Mixed up groups of microorganisms'], ['Virus', 'Mixed up useful and harmful microbes'], ['Protozoa', 'Mixed up groups of microorganisms']], 'Yeast releases carbon dioxide during fermentation, which makes dough rise.'),
+  q('m2', 'microorganisms', 'Diseases', 'Which disease is caused by a virus?', 'Common cold', [['Cholera', 'Mixed up bacterial and viral diseases'], ['Malaria', 'Mixed up protozoan and viral diseases'], ['Typhoid', 'Mixed up bacterial and viral diseases']], 'The common cold is viral; cholera and typhoid are bacterial, malaria is protozoan.'),
+  q('m3', 'microorganisms', 'Fermentation', 'Milk turns into curd because of…', 'Lactobacillus bacteria', [['Yeast', 'Mixed up groups of microorganisms'], ['Bread mould', 'Mixed up groups of microorganisms'], ['Viruses', 'Mixed up useful and harmful microbes']], 'Lactobacillus multiplies in milk and converts it into curd.'),
+  q('m4', 'microorganisms', 'Nitrogen fixation', 'Nitrogen-fixing bacteria live in the root nodules of…', 'Leguminous plants', [['Wheat', 'Unsure which plants have root nodules'], ['Cactus', 'Unsure which plants have root nodules'], ['Mango trees', 'Unsure which plants have root nodules']], 'Rhizobium lives in the root nodules of legumes such as peas and beans.'),
+
+  q('p1', 'coal-petroleum', 'Products of coal', 'Coke is obtained from…', 'Coal', [['Petroleum', 'Mixed up products of coal and petroleum'], ['Natural gas', 'Mixed up products of coal and petroleum'], ['Wood', 'Mixed up fossil and non-fossil fuels']], 'Coke is an almost pure form of carbon made by processing coal.'),
+  q('p2', 'coal-petroleum', 'Fossil fuels', 'Which of these is a fossil fuel?', 'Natural gas', [['Solar energy', 'Mixed up renewable and fossil sources'], ['Wind', 'Mixed up renewable and fossil sources'], ['Biogas', 'Mixed up fossil and non-fossil fuels']], 'Natural gas formed from ancient organisms over millions of years.'),
+  q('p3', 'coal-petroleum', 'Refining', 'Petroleum is separated into useful fractions in a…', 'Refinery', [['Coal mine', 'Mixed up extraction and refining'], ['Power plant', 'Mixed up refining and using fuel'], ['Dam', 'Mixed up energy sources']], 'Refineries separate crude oil into petrol, diesel, kerosene and more.'),
+  q('p4', 'coal-petroleum', 'Fuels in daily life', 'CNG stands for…', 'Compressed Natural Gas', [['Coal Natural Gas', 'Mixed up products of coal and petroleum'], ['Clean Neutral Gas', 'Recalled the abbreviation incorrectly'], ['Compressed Nitrogen Gas', 'Recalled the abbreviation incorrectly']], 'CNG is natural gas stored under high pressure, used as a cleaner fuel.'),
+]
+
+export const questionById = (id: string) => questions.find((x) => x.id === id) as Question
+export const questionsForTopic = (topicId: string) => questions.filter((x) => x.topicId === topicId)
+
+================================================================================
+FILE: lib/studyverse/dates.ts
+================================================================================
+export const TIME_ZONES = [
+  { value: 'Asia/Kolkata', label: 'India (IST)' },
+  { value: 'Asia/Dubai', label: 'Gulf (GST)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Europe/London', label: 'London (UK)' },
+  { value: 'America/New_York', label: 'New York (US East)' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles (US West)' },
+]
+
+export const DEFAULT_TIME_ZONE = 'Asia/Kolkata'
+export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+export function dateKeyInZone(date: Date, timeZone: string) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+}
+
+export function addDays(key: string, days: number) {
+  const d = new Date(`${key}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+export function weekdayIndex(key: string) {
+  return new Date(`${key}T00:00:00Z`).getUTCDay()
+}
+
+export function formatDateKey(key: string, options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }) {
+  return new Intl.DateTimeFormat('en-IN', { timeZone: 'UTC', ...options }).format(new Date(`${key}T00:00:00Z`))
+}
+
+export function formatMinutes(total: number) {
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  if (!h) return `${m} min`
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+
+================================================================================
+FILE: lib/studyverse/engine.ts
+================================================================================
+import { topics } from './content'
+import type { ChangeSummary, EvidenceLevel, MasteryStatus, PlannerSettings, QuizRecord, QuizResponse, Recommendation, Topic, TopicStat, Trend } from './types'
+
+export type StatsMap = Map<string, TopicStat>
+
+export const pct = (n: number) => `${Math.round(n * 100)}%`
+const names = (list: Topic[]) => list.map((t) => t.short).join(' and ')
+
+export function evidenceLevel(attempts: number): EvidenceLevel {
+  if (attempts === 0) return 'None'
+  if (attempts < 4) return 'Preliminary'
+  if (attempts < 8) return 'Moderate'
+  return 'Stronger'
+}
+
+// Fewer than 2 answers is never enough to call a topic weak or strong.
+export function masteryStatus(attempts: number, estimate: number): MasteryStatus {
+  if (attempts === 0) return 'unassessed'
+  if (attempts < 2) return 'uncertain'
+  if (estimate < 0.5) return 'weak'
+  if (estimate >= 0.7 && attempts >= 4) return 'strength'
+  return 'uncertain'
+}
+
+function trendOf(history: TopicStat['history']): Trend {
+  if (history.length < 2) return 'new'
+  const last = history[history.length - 1]
+  const prior = history.slice(0, -1).reduce((acc, h) => ({ c: acc.c + h.correct, t: acc.t + h.total }), { c: 0, t: 0 })
+  const diff = last.correct / last.total - prior.c / prior.t
+  if (diff >= 0.2) return 'improving'
+  if (diff <= -0.2) return 'declining'
+  return 'steady'
+}
+
+export function computeStats(records: QuizRecord[]): StatsMap {
+  const map: StatsMap = new Map()
+  for (const topic of topics) {
+    map.set(topic.id, { topic, attempts: 0, correct: 0, accuracy: 0, estimate: 0.5, status: 'unassessed', evidence: 'None', misconceptions: [], notes: [], history: [], trend: 'new', missingPrereqs: [] })
+  }
+  const misconceptionCounts = new Map<string, Map<string, number>>()
+  const sorted = [...records].sort((a, b) => a.takenAt.localeCompare(b.takenAt))
+  for (const record of sorted) {
+    const byTopic = new Map<string, QuizResponse[]>()
+    for (const r of record.responses) byTopic.set(r.topicId, [...(byTopic.get(r.topicId) ?? []), r])
+    for (const [topicId, responses] of byTopic) {
+      const stat = map.get(topicId)
+      if (!stat) continue
+      const correct = responses.filter((r) => r.correct).length
+      stat.attempts += responses.length
+      stat.correct += correct
+      stat.history.push({ recordId: record.id, takenAt: record.takenAt, correct, total: responses.length })
+      stat.lastSeen = record.takenAt
+      for (const r of responses) {
+        if (r.misconception) {
+          const counts = misconceptionCounts.get(topicId) ?? new Map<string, number>()
+          counts.set(r.misconception, (counts.get(r.misconception) ?? 0) + 1)
+          misconceptionCounts.set(topicId, counts)
+        }
+        if (r.reasoningNote) stat.notes.push(r.reasoningNote)
+      }
+    }
+  }
+  for (const stat of map.values()) {
+    stat.accuracy = stat.attempts ? stat.correct / stat.attempts : 0
+    stat.estimate = (stat.correct + 1) / (stat.attempts + 2)
+    stat.evidence = evidenceLevel(stat.attempts)
+    stat.status = masteryStatus(stat.attempts, stat.estimate)
+    stat.trend = trendOf(stat.history)
+    stat.misconceptions = [...(misconceptionCounts.get(stat.topic.id) ?? new Map<string, number>()).entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }
+  for (const stat of map.values()) {
+    stat.missingPrereqs = stat.topic.prerequisites.map((id) => map.get(id) as TopicStat).filter((p) => p.status !== 'strength').map((p) => p.topic)
+  }
+  return map
+}
+
+export function dependentsOf(topicId: string) {
+  return topics.filter((t) => t.prerequisites.includes(topicId))
+}
+
+export function recommend(stats: StatsMap, settings: Pick<PlannerSettings, 'weakSubjects' | 'goalSubjects'>): Recommendation[] {
+  const list: Recommendation[] = []
+  for (const stat of stats.values()) {
+    if (stat.status === 'strength') continue
+    const unlocks = dependentsOf(stat.topic.id).filter((t) => stats.get(t.id)?.status === 'weak')
+    if (stat.status === 'unassessed' && unlocks.length === 0) continue
+    const blockedBy = stat.topic.prerequisites.map((id) => stats.get(id) as TopicStat).filter((p) => p.status === 'weak' || p.status === 'unassessed').map((p) => p.topic)
+
+    let score = (1 - stat.estimate) * 100
+    score += unlocks.length * 15
+    if (settings.weakSubjects.includes(stat.topic.subject)) score += 10
+    if (settings.goalSubjects.includes(stat.topic.subject)) score += 8
+    if (stat.trend === 'declining') score += 10
+    if (stat.attempts > 0 && stat.attempts < 3) score += 5
+    if (blockedBy.length) score -= 15
+
+    const wrong = stat.attempts - stat.correct
+    const evidence = stat.evidence.toLowerCase()
+    const topMistake = stat.misconceptions[0]?.label
+    let action: Recommendation['action']
+    let reason: string
+    if (unlocks.length) {
+      action = 'Strengthen foundation'
+      reason = `${stat.topic.short} is a foundation for ${names(unlocks)}, and you answered ${stat.correct} of ${stat.attempts} related questions correctly (${evidence} evidence).`
+    } else if (stat.status === 'weak') {
+      action = 'Targeted practice'
+      reason = `You answered ${wrong} of ${stat.attempts} questions incorrectly${topMistake ? `, most often: ${topMistake.toLowerCase()}` : ''}.${blockedBy.length ? ` Strengthening ${names(blockedBy)} first will help.` : ''}`
+    } else if (stat.evidence === 'Preliminary' || stat.evidence === 'None') {
+      action = 'Gather more evidence'
+      reason = `Only ${stat.attempts} answer${stat.attempts === 1 ? '' : 's'} so far, so a short check will show where you really stand.`
+    } else {
+      action = 'Refresh'
+      reason = `Accuracy is ${pct(stat.accuracy)}; ${stat.trend === 'declining' ? 'it dipped in your latest quiz, so a quick review will help' : 'a quick review will help it stick'}.`
+    }
+    list.push({ topic: stat.topic, score, action, reason, unlocks, blockedBy })
+  }
+  return list.sort((a, b) => b.score - a.score)
+}
+
+export function explainChange(prevStats: StatsMap, nextStats: StatsMap, prevRecs: Recommendation[], nextRecs: Recommendation[], record: QuizRecord): ChangeSummary {
+  const topicIds = [...new Set(record.responses.map((r) => r.topicId))]
+  const correct = record.responses.filter((r) => r.correct).length
+  const total = record.responses.length
+
+  const masteryChanges = topicIds.map((id) => {
+    const before = prevStats.get(id) as TopicStat
+    const after = nextStats.get(id) as TopicStat
+    return { topicId: id, name: after.topic.short, before: before.estimate, after: after.estimate, beforeStatus: before.status, afterStatus: after.status, evidence: after.evidence, attempts: after.attempts }
+  })
+
+  const newWeaknesses: string[] = []
+  for (const r of record.responses) {
+    if (!r.misconception) continue
+    const seenBefore = prevStats.get(r.topicId)?.misconceptions.some((m) => m.label === r.misconception)
+    if (!seenBefore && !newWeaknesses.includes(r.misconception)) newWeaknesses.push(r.misconception)
+  }
+
+  const prerequisiteNotes = topicIds.map((id) => {
+    const stat = nextStats.get(id) as TopicStat
+    const dependents = dependentsOf(id)
+    if (stat.missingPrereqs.length) return `${stat.topic.short} builds on ${names(stat.missingPrereqs)}, which ${stat.missingPrereqs.length > 1 ? 'are' : 'is'} not yet shown as secure.`
+    return `${stat.topic.short}: prerequisites look secure${dependents.length ? `. It unlocks ${names(dependents)}` : ''}.`
+  })
+
+  const prevTop3 = prevRecs.slice(0, 3).map((r) => r.topic)
+  const nextTop3 = nextRecs.slice(0, 3).map((r) => r.topic)
+  const added = nextTop3.filter((t) => !prevTop3.some((p) => p.id === t.id)).map((t) => t.short)
+  const removed = prevTop3.filter((t) => !nextTop3.some((n) => n.id === t.id)).map((t) => t.short)
+
+  const prevTop = prevRecs[0]?.topic
+  const nextTop = nextRecs[0]?.topic
+  const improved = masteryChanges.filter((m) => m.after - m.before >= 0.04).sort((a, b) => (b.after - b.before) - (a.after - a.before))
+  const declined = masteryChanges.filter((m) => m.after - m.before <= -0.04).sort((a, b) => (a.after - a.before) - (b.after - b.before))
+  const topChanged = !!prevTop && !!nextTop && prevTop.id !== nextTop.id
+
+  let message: string
+  if (!nextTop) {
+    message = 'No topics currently need extra attention. Keep practising to build stronger evidence.'
+  } else if (topChanged && improved.length && !declined.length) {
+    message = `Your recommendation changed because your latest quiz showed improvement in ${improved[0].name}, so the next priority is now ${nextTop.short}.`
+  } else if (topChanged && declined.length) {
+    message = `Your recommendation changed because your latest quiz showed new difficulty in ${declined[0].name}, so ${nextTop.short} is now the priority. Targeted practice has been added to your plan.`
+  } else if (topChanged) {
+    message = `Your recommendation changed after re-checking prerequisites, so the next priority is now ${nextTop.short}. ${nextRecs[0].reason}`
+  } else if (improved.length) {
+    message = `You improved in ${improved[0].name}. ${nextTop.short} stays your top priority: ${nextRecs[0].reason}`
+  } else if (declined.length) {
+    message = `Your latest quiz showed some difficulty in ${declined[0].name}. ${nextTop.short} remains the top priority, and targeted practice is ready.`
+  } else {
+    message = `${nextTop.short} stays your top priority: ${nextRecs[0].reason}`
+  }
+  if (total < 4) message += ' This is based on a small sample, so treat it as preliminary.'
+
+  return { recordId: record.id, title: record.title, correct, total, message, topChanged, masteryChanges, newWeaknesses, prerequisiteNotes, added, removed, nextTopics: nextTop3.map((t) => t.short) }
+}
+
+================================================================================
+FILE: lib/studyverse/plan.ts
+================================================================================
+import { addDays, weekdayIndex } from './dates'
+import { pct, type StatsMap } from './engine'
+import type { PlanDay, PlannerSettings, PlanTask, Recommendation, TaskKind, TopicStat } from './types'
+
+export const MAX_PLANNED_MINUTES = 90
+const roundTo5 = (n: number) => Math.max(5, Math.round(n / 5) * 5)
+
+export function allocate(minutes: number): { kind: TaskKind; minutes: number }[] {
+  const total = Math.min(Math.max(minutes, 10), MAX_PLANNED_MINUTES)
+  if (total < 25) {
+    const reassess = 5
+    const practice = total >= 15 ? 5 : 0
+    const learn = total - reassess - practice
+    return [{ kind: 'learn', minutes: learn }, ...(practice ? [{ kind: 'practice' as const, minutes: practice }] : []), { kind: 'reassess', minutes: reassess }]
+  }
+  const review = total <= 45 ? 5 : 10
+  const reassess = total <= 45 ? 5 : 10
+  const rest = total - review - reassess
+  const learn = roundTo5(rest / 2)
+  return [
+    { kind: 'learn', minutes: learn },
+    { kind: 'practice', minutes: rest - learn },
+    { kind: 'review', minutes: review },
+    { kind: 'reassess', minutes: reassess },
+  ]
+}
+
+function tasksFor(date: string, rec: Recommendation, stats: StatsMap, minutes: number): PlanTask[] {
+  const focus = rec.topic
+  const stat = stats.get(focus.id) as TopicStat
+  const prereq = rec.blockedBy[0] ?? stat.missingPrereqs.find((p) => stats.get(p.id)?.status !== 'strength' && (stats.get(p.id)?.estimate ?? 1) < 0.6)
+  const topMistake = stat.misconceptions[0]
+  return allocate(minutes).map(({ kind, minutes: m }) => {
+    const topicId = kind === 'learn' && prereq ? prereq.id : focus.id
+    const base = { id: `${date}:${kind}:${topicId}`, date, kind, topicId, minutes: m }
+    if (kind === 'learn') {
+      return prereq
+        ? { ...base, title: `Revise prerequisite: ${prereq.short}`, reason: `${focus.short} builds on ${prereq.short}. Strengthening it first makes the practice that follows more useful.` }
+        : { ...base, title: `Revise concept: ${focus.short}`, reason: rec.reason }
+    }
+    if (kind === 'practice') {
+      return { ...base, title: `Targeted questions: ${focus.short}`, reason: stat.attempts ? `Accuracy so far is ${pct(stat.accuracy)} across ${stat.attempts} answers (${stat.evidence.toLowerCase()} evidence).` : 'No answers yet. Practice gives the first real evidence.' }
+    }
+    if (kind === 'review') {
+      return { ...base, title: `Review mistakes: ${focus.short}`, reason: topMistake ? `Revisit "${topMistake.label}". It came up ${topMistake.count} time${topMistake.count > 1 ? 's' : ''}.` : 'Look back at explanations for any questions you missed.' }
+    }
+    return { ...base, title: `Short reassessment: ${focus.short}`, reason: `A 4-question check updates your mastery estimate for ${focus.short} and your next recommendation.` }
+  })
+}
+
+export function buildPlan({ today, settings, recs, stats, rescheduled }: { today: string; settings: PlannerSettings; recs: Recommendation[]; stats: StatsMap; rescheduled: Record<string, string> }): PlanDay[] {
+  const focusRecs = recs.slice(0, 3)
+  const days: PlanDay[] = []
+  let rotation = 0
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(today, i)
+    const available = settings.studyDays.includes(weekdayIndex(date))
+    let tasks: PlanTask[] = []
+    let focus
+    if ((available || i === 0) && focusRecs.length) {
+      const rec = focusRecs[rotation % focusRecs.length]
+      if (available) rotation++
+      focus = rec.topic
+      tasks = tasksFor(date, rec, stats, settings.dailyMinutes)
+    }
+    days.push({ date, available, focus, tasks })
+  }
+  const moved: PlanTask[] = []
+  for (const day of days) {
+    day.tasks = day.tasks.filter((task) => {
+      const target = rescheduled[task.id]
+      if (!target || target === day.date) return true
+      moved.push({ ...task, date: target, movedFrom: day.date })
+      return false
+    })
+  }
+  for (const task of moved) days.find((d) => d.date === task.date)?.tasks.push(task)
+  return days
+}
+
+================================================================================
+FILE: lib/studyverse/seed.ts
+================================================================================
+import { questionById, wrongOptionIndex } from './content'
+import { addDays } from './dates'
+import type { Activity, QuizRecord, QuizResponse } from './types'
+
+type Pick = 'c' | 0 | 1 | 2
+
+export function buildResponse(questionId: string, pick: Pick, reasoningNote?: string): QuizResponse {
+  const question = questionById(questionId)
+  const choice = pick === 'c' ? question.answer : wrongOptionIndex(question, pick)
+  const correct = choice === question.answer
+  return { questionId, topicId: question.topicId, choice, correct, misconception: correct ? undefined : question.traps[choice], reasoningNote }
+}
+
+const seedQuizzes: { daysAgo: number; title: string; answers: [string, Pick, string?][] }[] = [
+  { daysAgo: 20, title: 'Diagnostic quiz', answers: [['f1', 0], ['m1', 'c'], ['l1', 'c'], ['i1', 'c'], ['a1', 0, 'Explanation skipped multiplying the second term in the bracket']] },
+  { daysAgo: 14, title: 'Fractions & percentages check', answers: [['f2', 0], ['f3', 'c'], ['c1', 0], ['c2', 'c']] },
+  { daysAgo: 9, title: 'Integers & brackets practice', answers: [['i2', 'c'], ['i3', 'c'], ['i4', 0], ['d1', 'c'], ['d2', 0, 'Reasoning showed a sign error when distributing −2']] },
+  { daysAgo: 6, title: 'Mixed Class 8 practice', answers: [['a2', 'c'], ['a3', 0, 'Explanation suggests difficulty applying the distributive property to a subtracted bracket'], ['m2', 'c'], ['m3', 'c'], ['p1', 'c'], ['p2', 0]] },
+  { daysAgo: 3, title: 'Weekly review quiz', answers: [['f4', 'c'], ['f2', 1], ['c3', 1], ['c4', 2], ['l2', 'c'], ['l3', 0], ['m4', 'c'], ['m1', 'c'], ['p3', 'c'], ['p4', 1]] },
+]
+
+const studyMinutesByDaysAgo: Record<number, number> = {
+  30: 35, 29: 40, 28: 30, 27: 45, 26: 35, 25: 30,
+  23: 15, 21: 20, 20: 40, 18: 10, 15: 35, 14: 45, 12: 15,
+  9: 35, 8: 40, 7: 30, 6: 50, 5: 35, 4: 30, 3: 45, 2: 35, 1: 40,
+}
+
+export function createSeed(today: string) {
+  const at = (daysAgo: number) => `${addDays(today, -daysAgo)}T12:00:00.000Z`
+  const records: QuizRecord[] = seedQuizzes.map((quiz, i) => ({
+    id: `seed-quiz-${i + 1}`,
+    takenAt: at(quiz.daysAgo),
+    title: quiz.title,
+    responses: quiz.answers.map(([id, pick, note]) => buildResponse(id, pick, note)),
+  }))
+  const activities: Activity[] = Object.entries(studyMinutesByDaysAgo).map(([daysAgo, minutes]) => ({
+    id: `seed-session-${daysAgo}`,
+    at: at(Number(daysAgo)),
+    minutes,
+    goalMinutes: 30,
+    label: 'Planned study session',
+    kind: 'session',
+  }))
+  return { records, activities }
+}
+
+================================================================================
+FILE: lib/studyverse/streak.ts
+================================================================================
+import { addDays, dateKeyInZone } from './dates'
+import type { Activity } from './types'
+
+export const MILESTONES = [
+  { days: 10, id: 'bronze', name: 'Bronze Learner', cosmetic: 'Bronze profile ring', tone: 'bronze' },
+  { days: 50, id: 'silver', name: 'Silver Scholar', cosmetic: 'Silver dashboard theme accent', tone: 'silver' },
+  { days: 100, id: 'gold', name: 'Gold Scholar', cosmetic: 'Gold scholar crest', tone: 'gold' },
+] as const
+
+export type Milestone = (typeof MILESTONES)[number]
+export type EarnedReward = { milestone: Milestone; earnedOn: string }
+export type DayTotal = { minutes: number; goal: number; items: Activity[] }
+
+export function dailyTotals(activities: Activity[], timeZone: string, today: string, currentGoal: number) {
+  const totals = new Map<string, DayTotal>()
+  for (const a of [...activities].sort((x, y) => x.at.localeCompare(y.at))) {
+    const key = dateKeyInZone(new Date(a.at), timeZone)
+    const entry = totals.get(key) ?? { minutes: 0, goal: a.goalMinutes, items: [] }
+    entry.minutes += a.minutes
+    entry.goal = a.goalMinutes
+    entry.items.push(a)
+    totals.set(key, entry)
+  }
+  const todayEntry = totals.get(today)
+  if (todayEntry) todayEntry.goal = currentGoal
+  return totals
+}
+
+export function computeStreak(activities: Activity[], timeZone: string, today: string, currentGoal: number) {
+  const totals = dailyTotals(activities, timeZone, today, currentGoal)
+  const met = (key: string) => {
+    const d = totals.get(key)
+    return !!d && d.minutes >= d.goal
+  }
+
+  let current = 0
+  let cursor = met(today) ? today : addDays(today, -1)
+  while (met(cursor)) {
+    current++
+    cursor = addDays(cursor, -1)
+  }
+
+  const metDays = [...totals.keys()].filter(met).sort()
+  const runs: { start: string; end: string; length: number }[] = []
+  for (const key of metDays) {
+    const last = runs[runs.length - 1]
+    if (last && addDays(last.end, 1) === key) {
+      last.end = key
+      last.length++
+    } else {
+      runs.push({ start: key, end: key, length: 1 })
+    }
+  }
+
+  const earned = new Map<string, EarnedReward>()
+  for (const run of runs) {
+    for (const m of MILESTONES) {
+      if (run.length >= m.days && !earned.has(m.id)) earned.set(m.id, { milestone: m, earnedOn: addDays(run.start, m.days - 1) })
+    }
+  }
+
+  const todayMinutes = totals.get(today)?.minutes ?? 0
+  return {
+    current,
+    longest: runs.reduce((max, r) => Math.max(max, r.length), 0),
+    todayMinutes,
+    todayGoal: currentGoal,
+    todayMet: met(today),
+    totals,
+    met,
+    rewards: [...earned.values()],
+    next: MILESTONES.find((m) => m.days > current),
+  }
+}
+
+export type StreakInfo = ReturnType<typeof computeStreak>
+
+================================================================================
+FILE: lib/studyverse/types.ts
+================================================================================
+export type Topic = {
+  id: string
+  name: string
+  short: string
+  subject: 'Mathematics' | 'Science'
+  level: string
+  prerequisites: string[]
+}
+
+export type Question = {
+  id: string
+  topicId: string
+  concept: string
+  prompt: string
+  options: string[]
+  answer: number
+  explain: string
+  traps: Record<number, string>
+}
+
+export type Confidence = 'Low' | 'Medium' | 'High'
+
+export type QuizResponse = {
+  questionId: string
+  topicId: string
+  choice: number
+  correct: boolean
+  misconception?: string
+  reasoningNote?: string
+  confidence?: Confidence
+}
+
+export type QuizRecord = {
+  id: string
+  takenAt: string
+  title: string
+  responses: QuizResponse[]
+}
+
+export type Activity = {
+  id: string
+  at: string
+  minutes: number
+  goalMinutes: number
+  label: string
+  kind: 'task' | 'quiz' | 'session'
+}
+
+export type PreferredTime = 'Morning' | 'Afternoon' | 'Evening'
+
+export type PlannerSettings = {
+  dailyMinutes: number
+  studyDays: number[]
+  preferredTime: PreferredTime
+  weakSubjects: string[]
+  goalSubjects: string[]
+  goalNote: string
+  timeZone: string
+}
+
+export type MasteryStatus = 'weak' | 'uncertain' | 'strength' | 'unassessed'
+export type EvidenceLevel = 'None' | 'Preliminary' | 'Moderate' | 'Stronger'
+export type Trend = 'improving' | 'declining' | 'steady' | 'new'
+
+export type TopicStat = {
+  topic: Topic
+  attempts: number
+  correct: number
+  accuracy: number
+  estimate: number
+  status: MasteryStatus
+  evidence: EvidenceLevel
+  misconceptions: { label: string; count: number }[]
+  notes: string[]
+  history: { recordId: string; takenAt: string; correct: number; total: number }[]
+  trend: Trend
+  lastSeen?: string
+  missingPrereqs: Topic[]
+}
+
+export type RecommendationAction = 'Strengthen foundation' | 'Targeted practice' | 'Gather more evidence' | 'Refresh'
+
+export type Recommendation = {
+  topic: Topic
+  score: number
+  action: RecommendationAction
+  reason: string
+  unlocks: Topic[]
+  blockedBy: Topic[]
+}
+
+export type MasteryChange = {
+  topicId: string
+  name: string
+  before: number
+  after: number
+  beforeStatus: MasteryStatus
+  afterStatus: MasteryStatus
+  evidence: EvidenceLevel
+  attempts: number
+}
+
+export type ChangeSummary = {
+  recordId: string
+  title: string
+  correct: number
+  total: number
+  message: string
+  topChanged: boolean
+  masteryChanges: MasteryChange[]
+  newWeaknesses: string[]
+  prerequisiteNotes: string[]
+  added: string[]
+  removed: string[]
+  nextTopics: string[]
+}
+
+export type TaskKind = 'learn' | 'practice' | 'review' | 'reassess'
+
+export type PlanTask = {
+  id: string
+  date: string
+  kind: TaskKind
+  title: string
+  topicId: string
+  minutes: number
+  reason: string
+  movedFrom?: string
+}
+
+export type PlanDay = {
+  date: string
+  available: boolean
+  focus?: Topic
+  tasks: PlanTask[]
+}
+
+export type UploadStatus = 'validating' | 'uploading' | 'received' | 'error'
+
+export type UploadItem = {
+  id: string
+  name: string
+  size: number
+  status: UploadStatus
+  progress: number
+  error?: string
+  addedAt: string
+}
+
+================================================================================
+FILE: lib/utils.ts
+================================================================================
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+================================================================================
+FILE: next.config.mjs
+================================================================================
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
+  },
+}
+
+export default nextConfig
+
+================================================================================
+FILE: package.json
+================================================================================
+{
+  "name": "my-project",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.5.0",
+    "@vercel/analytics": "1.6.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "next": "16.4.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "shadcn": "^4.11.0",
+    "tailwind-merge": "^3.3.1",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "postcss": "^8.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.7.3"
+  }
+}
+
+================================================================================
+FILE: pnpm-workspace.yaml
+================================================================================
+pmOnFail: ignore
+
+minimumReleaseAgeExclude:
+  - '@next/*'
+  - next
+
+================================================================================
+FILE: postcss.config.mjs
+================================================================================
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    '@tailwindcss/postcss': {},
+  },
+}
+
+export default config
+
+================================================================================
+FILE: tsconfig.json
+================================================================================
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "target": "ES6",
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
