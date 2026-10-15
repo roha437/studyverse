@@ -11,6 +11,7 @@ import {
   ClassLevel,
 } from '../types/studyverse';
 import { queryTextbookRAG } from '../services/recommendationEngine';
+import { askTutorAPI } from '../services/api';
 import {
   Brain,
   BookOpen,
@@ -73,7 +74,7 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
 
   const currentTopic = topics.find((t) => t.id === selectedTopicId) || topics[0];
 
-  const handleSendQuery = (
+  const handleSendQuery = async (
     queryText: string,
     mode: 'standard' | 'simple' | 'example' | 'why_correct' = 'standard'
   ) => {
@@ -86,13 +87,10 @@ export const AITutorView: React.FC<AITutorViewProps> = ({
       text: trimmed,
     };
 
-    const ragResult = queryTextbookRAG(
-      trimmed,
-      passages,
-      selectedSubject,
-      selectedClass,
-      mode
-    );
+    const apiResult = await askTutorAPI(trimmed, selectedClass, selectedSubject, mode, passages);
+    const ragResult = apiResult
+      ? { answer: apiResult.answer, citations: apiResult.citations, grounded: apiResult.grounded, followUpSuggestions: apiResult.followUps }
+      : queryTextbookRAG(trimmed, passages, selectedSubject, selectedClass, mode);
 
     const tutorMsg: ChatTurn = {
       id: `t-${Date.now() + 1}`,
@@ -895,10 +893,13 @@ export const AskDoubtDrawer: React.FC<AskDoubtDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  const submitDoubt = (qText: string, mode: 'standard' | 'simple' | 'example' = 'standard') => {
+  const submitDoubt = async (qText: string, mode: 'standard' | 'simple' | 'example' = 'standard') => {
     const clean = qText.trim();
     if (!clean) return;
-    const res = queryTextbookRAG(clean, passages, subject, classLevel, mode);
+    const apiRes = await askTutorAPI(clean, classLevel, subject, mode, passages);
+    const res = apiRes
+      ? { answer: apiRes.answer, citations: apiRes.citations, followUpSuggestions: apiRes.followUps }
+      : queryTextbookRAG(clean, passages, subject, classLevel, mode);
     setHistory((prev) => [
       ...prev,
       {
