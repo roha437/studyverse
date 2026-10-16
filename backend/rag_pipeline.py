@@ -1,17 +1,16 @@
 """
-StudyVerse Textbook Retrieval-Augmented Generation (RAG) & PDF Ingestion Pipeline
+StudyVerse deterministic textbook retrieval and PDF indexing pipeline
 Implements the 8-step textbook RAG pipeline:
 1. Extract text from authorized CBSE/NCERT textbook PDFs (via PyMuPDF or pypdf).
 2. Split text into searchable chunks.
 3. Preserve board, class, subject, chapter, and page metadata.
 4. Generate embeddings / TF-IDF vectors.
 5. Retrieve relevant textbook passages.
-6. Provide retrieved passages to an existing LLM (configured via server env vars).
-7. Generate a grounded answer.
-8. Return actual source references when available, or acknowledge insufficient evidence.
+6. Rank passages with token overlap; no LLM or paid API is used.
+7. Return retrieved textbook text with source metadata.
+8. Acknowledge insufficient evidence rather than guessing.
 """
 import math
-import os
 import re
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Optional, Tuple
@@ -35,10 +34,6 @@ class TextbookChunk:
 class TextbookRAGService:
     def __init__(self, initial_chunks: List[TextbookChunk]):
         self.chunks: List[TextbookChunk] = list(initial_chunks)
-        self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY") or ""
-        # Treat placeholder env strings as unconfigured
-        if "your_server_side" in self.api_key:
-            self.api_key = ""
 
     def extract_and_index_pdf(
         self,
@@ -83,7 +78,7 @@ class TextbookRAGService:
                 "status": "indexed" if extracted_chunks else "parsed_empty",
                 "chunksCreated": len(extracted_chunks),
                 "pagesProcessed": len(reader.pages),
-                "mode": "live_llm" if self.api_key else "demo_deterministic_rag",
+                "mode": "deterministic_textbook_retrieval",
             }
         except Exception as exc:
             return {
@@ -149,7 +144,7 @@ class TextbookRAGService:
                 ),
                 "citations": [],
                 "grounded": False,
-                "isDemoMode": not bool(self.api_key),
+                "isDemoMode": True,
                 "followUpSuggestions": [
                     f"What are the core formulas in Class {class_level} {subject}?",
                     "Can you explain this topic more simply?",
@@ -191,7 +186,7 @@ class TextbookRAGService:
                 for c in top_passages
             ],
             "grounded": True,
-            "isDemoMode": not bool(self.api_key),
+            "isDemoMode": True,
             "followUpSuggestions": [
                 "Can you explain this more simply?",
                 "Can you show me a step-by-step example?",
