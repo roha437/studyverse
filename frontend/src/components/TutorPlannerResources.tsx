@@ -11,7 +11,7 @@ import {
   ClassLevel,
 } from '../types/studyverse';
 import { queryTextbookRAG } from '../services/recommendationEngine';
-import { askTutorAPI } from '../services/api';
+import { askTutorAPI, uploadStudyResource } from '../services/api';
 import {
   Brain,
   BookOpen,
@@ -665,13 +665,34 @@ export const MyResourcesView: React.FC<MyResourcesViewProps> = ({
   const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Science');
   const [selectedClass, setSelectedClass] = useState<ClassLevel>(8);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
     const maxBytes = 25 * 1024 * 1024;
     const isUnderLimit = file.size <= maxBytes;
+    let processingStatus: UploadedResource['processingStatus'] =
+      isPdf && isUnderLimit ? 'pending_backend' : 'rejected';
+    let statusMessage = !isPdf
+      ? 'Rejected: Only .pdf textbook or study note files are permitted.'
+      : !isUnderLimit
+      ? 'Rejected: File exceeds the 25 MB maximum upload size.'
+      : 'Uploading PDF to StudyVerse backend for text extraction and indexing…';
+    let chunksExtracted = 0;
+
+    if (isPdf && isUnderLimit) {
+      const result = await uploadStudyResource(file, selectedClass, selectedSubject);
+      if (result) {
+        processingStatus = result.chunksCreated > 0 ? 'indexed_demo' : 'pending_backend';
+        chunksExtracted = result.chunksCreated;
+        statusMessage = result.chunksCreated > 0
+          ? `Backend indexed ${result.chunksCreated} textbook chunks from ${result.pagesProcessed || 'the PDF'} pages.`
+          : 'The PDF reached the backend, but no extractable text was found.';
+      } else {
+        statusMessage = 'The backend could not process this upload right now. Please try again after the service wakes up.';
+      }
+    }
 
     const newRes: UploadedResource = {
       id: `res-${Date.now()}`,
@@ -680,20 +701,11 @@ export const MyResourcesView: React.FC<MyResourcesViewProps> = ({
       subject: selectedSubject,
       classLevel: selectedClass,
       uploadProgress: 100,
-      validationStatus: !isPdf
-        ? 'invalid_type'
-        : !isUnderLimit
-        ? 'exceeds_size'
-        : 'valid',
-      processingStatus:
-        isPdf && isUnderLimit ? 'indexed_demo' : 'rejected',
-      statusMessage: !isPdf
-        ? 'Rejected: Only .pdf textbook or study note files are permitted.'
-        : !isUnderLimit
-        ? 'Rejected: File exceeds the 25 MB maximum upload size.'
-        : 'Validated PDF structure. Demo Mode: Metadata registered (connect FastAPI backend for full PyMuPDF vector indexing).',
+      validationStatus: !isPdf ? 'invalid_type' : !isUnderLimit ? 'exceeds_size' : 'valid',
+      processingStatus,
+      statusMessage,
       uploadedAt: new Date().toISOString().slice(0, 10),
-      chunksExtracted: isPdf && isUnderLimit ? Math.max(4, Math.round(file.size / 18000)) : 0,
+      chunksExtracted,
     };
 
     onAddResource(newRes);
