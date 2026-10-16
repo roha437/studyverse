@@ -20,6 +20,7 @@ import {
   buildStudyPlanAndRecommendation,
 } from './services/recommendationEngine';
 import { StudyVerseLogo, LandingPage } from './components/BrandAndLanding';
+import { saveOnboarding, submitQuizAttempts } from './services/api';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { QuizRunner, DiagnosticResultsView } from './components/QuizEngine';
 import { LearningGapsView, LearnTopicView } from './components/LearningAndGaps';
@@ -315,9 +316,11 @@ export default function App() {
   };
 
   // Onboarding finish -> Start mandatory combined diagnostic
-  const handleCompleteOnboarding = (updatedStudent: Student) => {
+  const handleCompleteOnboarding = async (updatedStudent: Student) => {
     setStudent(updatedStudent);
     setIsDemoData(false);
+    // Save the profile to FastAPI; continue locally if the backend is temporarily asleep.
+    await saveOnboarding(updatedStudent);
     setAppScreen('diagnostic_quiz');
   };
 
@@ -327,6 +330,8 @@ export default function App() {
     setStudent(updatedStudent);
     setAttempts(newAttempts);
     refreshEngineState(updatedStudent, newAttempts, {}, null);
+    // Persist quiz answers and reasoning to FastAPI. The UI keeps its local result if offline.
+    void submitQuizAttempts(updatedStudent.id, newAttempts, QUIZ_QUESTIONS);
     recordStudyMinutes(10);
     setAppScreen('diagnostic_results');
   };
