@@ -42,6 +42,21 @@ export async function saveOnboarding(student: Student): Promise<boolean> {
   return Boolean(result?.student);
 }
 
+export async function uploadStudyResource(file: File, classLevel: ClassLevel, subject: SubjectName): Promise<{ status: string; chunksCreated: number; pagesProcessed?: number } | null> {
+  if (file.size > 25 * 1024 * 1024 || !file.name.toLowerCase().endsWith('.pdf')) return null;
+  const form = new FormData();
+  form.append('file', file);
+  form.append('classLevel', String(classLevel));
+  form.append('subject', subject);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/resources/upload`, { method: 'POST', body: form });
+    if (!response.ok) return null;
+    return (await response.json()) as { status: string; chunksCreated: number; pagesProcessed?: number };
+  } catch {
+    return null;
+  }
+}
+
 export async function submitQuizAttempts(
   studentId: string,
   attempts: QuizAttempt[],
